@@ -1,0 +1,6 @@
+@johunter.ASP.NET_HostAddress = http://localhost:5298
+
+GET {{johunter.ASP.NET_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
