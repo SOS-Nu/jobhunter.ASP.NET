@@ -4,24 +4,20 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace jobhunter.ASP.NET.Entities
 {
     /// <summary>
-    /// Maps from: vn.hoidanit.jobhunter.domain.entity.Subscriber
-    /// Table: subscribers
+    /// Maps from: vn.hoidanit.jobhunter.domain.entity.ChatRoom (extends BaseEntity)
+    /// Table: chat_rooms
     /// </summary>
-    [Table("subscribers")]
-    public class Subscriber
+    [Table("chat_rooms")]
+    public class ChatRoom
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("id")]
         public long Id { get; set; }
 
-        [Required(ErrorMessage = "email không được để trống")]
-        [Column("email")]
-        public string Email { get; set; } = null!;
-
-        [Required(ErrorMessage = "name không được để trống")]
-        [Column("name")]
-        public string Name { get; set; } = null!;
+        [Required]
+        [Column("chat_name")]
+        public string ChatName { get; set; } = null!;
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
@@ -35,7 +31,14 @@ namespace jobhunter.ASP.NET.Entities
         [Column("updated_by")]
         public string? UpdatedBy { get; set; }
 
-        // Navigation: Many-to-Many with Skill (owning side)
-        public virtual ICollection<Skill> Skills { get; set; } = new List<Skill>();
+        // Navigation: Many-to-One with User (sender)
+        [Column("sender_id")]
+        public long SenderId { get; set; }
+        public virtual User Sender { get; set; } = null!;
+
+        // Navigation: Many-to-One with User (receiver)
+        [Column("receiver_id")]
+        public long ReceiverId { get; set; }
+        public virtual User Receiver { get; set; } = null!;
     }
 }

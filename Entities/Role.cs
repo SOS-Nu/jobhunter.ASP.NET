@@ -4,24 +4,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace jobhunter.ASP.NET.Entities
 {
     /// <summary>
-    /// Maps from: vn.hoidanit.jobhunter.domain.entity.Subscriber
-    /// Table: subscribers
+    /// Maps from: vn.hoidanit.jobhunter.domain.entity.Role
+    /// Table: roles
     /// </summary>
-    [Table("subscribers")]
-    public class Subscriber
+    [Table("roles")]
+    public class Role
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("id")]
         public long Id { get; set; }
 
-        [Required(ErrorMessage = "email không được để trống")]
-        [Column("email")]
-        public string Email { get; set; } = null!;
-
         [Required(ErrorMessage = "name không được để trống")]
         [Column("name")]
         public string Name { get; set; } = null!;
+
+        [Column("description")]
+        public string? Description { get; set; }
+
+        [Column("active")]
+        public bool Active { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
@@ -35,7 +37,10 @@ namespace jobhunter.ASP.NET.Entities
         [Column("updated_by")]
         public string? UpdatedBy { get; set; }
 
-        // Navigation: Many-to-Many with Skill (owning side)
-        public virtual ICollection<Skill> Skills { get; set; } = new List<Skill>();
+        // Navigation properties
+        public virtual ICollection<User> Users { get; set; } = new List<User>();
+
+        // Many-to-Many with Permission (owning side)
+        public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
     }
 }

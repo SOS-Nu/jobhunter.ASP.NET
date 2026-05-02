@@ -1,0 +1,44 @@
+## [ Build OutPut ]
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+## [ Visual Studio ]
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.vssscc
+*.clw
+*.ncb
+*.aps
+*.user
+*.bak
+*.cache
+*.log
+
+## [ User-specific files ]
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## [ Visual Studio Code ]
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## [ Secrets & Configuration ]
+# Chỉ nên đẩy file template, không nên đẩy file chứa mật khẩu thật
+# appsettings.Development.json
+# usersecrets.json
+
+## [ Operating System ]
+OSX_Store
+desktop.ini
+Thumbs.db
