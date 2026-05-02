@@ -1,0 +1,222 @@
+{
+  "company_review": {
+    "title": "AI Insights",
+    "loading": "AI đang phân tích dữ liệu...",
+    "error": "AI không thể đánh giá lúc này",
+    "close_btn": "Tôi đã hiểu",
+    "scam": {
+      "warning": "Phát hiện dấu hiệu rủi ro",
+      "safe": "Kiểm tra an toàn"
+    },
+    "benefits": {
+      "title": "Đãi ngộ & Bảo hiểm",
+      "insurance": "BHXH",
+      "salary": "Lương thưởng"
+    },
+    "environment": {
+      "title": "Môi trường làm việc",
+      "balance": "Cân bằng",
+      "pressure": "Áp lực",
+      "culture": "Văn hóa"
+    }
+  },
+  "hero": {
+    "cv": "Hồ sơ CV",
+    "jobDesc": "Mô tả Job",
+    "salary": "Lọc theo Lương",
+    "experience": "Kinh nghiệm",
+    "skills": "Kỹ năng",
+    "benefits": "Phúc lợi",
+    "degree": "Bằng cấp",
+    "referral": "Thư giới thiệu",
+    "review": "Review Công ty",
+    "remote": "Làm việc từ xa",
+    "flexible": "Thời gian linh hoạt",
+    "startup": "Khởi nghiệp",
+    "outputOffer": "Nhận được Offer",
+    "outputSalary": "Lương hấp dẫn",
+    "outputCulture": "Phù hợp văn hóa"
+  },
+  "appHeader": {
+    "brand": "JobHunter",
+    "home": "Trang chủ",
+    "findjobs": "Tìm việc làm",
+    "company": "Tìm công ty",
+    "project": "Dự án",
+    "contact": "Liên hệ",
+    "about": "Về tác giả",
+    "recruiter": "Nhà Tuyển Dụng",
+    "evaluateCV": "Đánh Giá CV",
+    "profileCV": "Profile CV",
+    "onlineResume": "Online Resume",
+    "cvPage": "Trang Cá Nhân CV",
+    "manageAccount": "Quản lý tài khoản",
+    "adminPage": "Trang Quản Trị",
+    "messages": "Tin Nhắn",
+    "logout": "Đăng xuất",
+    "logoutSuccess": "Đăng xuất thành công",
+    "login": "Đăng Nhập",
+    "languageEn": "Tiếng Anh",
+    "languageVi": "Tiếng Việt",
+    "offcanvasTitle": "Chức năng"
+  },
+  "searchClient": {
+    "aiPlaceholder": "Nhập mô tả công việc bạn mong muốn, kỹ năng của bạn...",
+    "companyPlaceholder": "Nhập tên công ty bạn quan tâm...",
+    "jobPlaceholder": "Nhập tên công việc, ví dụ: Java, Frontend, DevOps...",
+    "typewriter1": "Tìm Việc làm nhanh chóng",
+    "typewriter2": "mới nhất toàn quốc",
+    "typewriter3": "Tìm Việc làm Bởi AI",
+    "selectJob": "Tên Job",
+    "selectCompany": "Công ty",
+    "selectAI": "Dùng AI",
+    "locationPlaceholder": "Địa Điểm",
+    "locationNotFound": "Không tìm thấy",
+    "searchButton": "Tìm kiếm",
+    "uploadCV": "Tải lên CV",
+    "defaultPrompt": "Tìm việc phù hợp dựa trên CV của tôi",
+    "searchError": "Lỗi khi thực hiện tìm kiếm:"
+  },
+  "banner": {
+    "title": "Tìm Việc Làm Mơ Ước Với",
+    "subtitle": "Khám phá hàng ngàn cơ hội việc làm từ các công ty hàng đầu. Bắt đầu hành trình sự nghiệp của bạn ngay hôm nay!",
+    "button": "Tìm Việc Ngay",
+    "cta": "Khám Phá Ngay!"
+  },
+  "footer": {
+    "about": {
+      "title": "Về chúng tôi",
+      "items": ["Giới thiệu", "Cơ hội việc làm", "Tin tức", "Đối tác"]
+    },
+    "services": {
+      "title": "Dịch vụ",
+      "items": ["Tư vấn CV", "Phỏng vấn thử", "Xây dựng lộ trình", "Workshop"]
+    },
+    "career": {
+      "title": "Nghề nghiệp",
+      "items": ["Blog", "Hướng dẫn", "Sự kiện", "Cộng đồng"]
+    },
+    "contact": {
+      "title": "Liên hệ",
+      "hotline": "Hotline: ",
+      "email": "Email: "
+    },
+    "newsletter": {
+      "title": "Đăng ký nhận bản tin",
+      "placeholder": "Nhập email của bạn",
+      "button": "Đăng ký"
+    },
+    "app": {
+      "title": "Tải ứng dụng",
+      "download": "Tải về trên",
+      "googlePlay": "Google Play",
+      "appStore": "App Store"
+    },
+    "copyright": "JobHunter Cơ hội việc làm, chỉ một cú click! © President SOS Nu {{year}}. Đã đăng ký bản quyền."
+  },
+  "heroSection": {
+    "exp": "Kinh nghiệm",
+    "cv": "Tải Resume"
+  },
+  "introSection": {
+    "about": "Giới thiệu",
+    "and": "và",
+    "heading1": "Yêu đơn phương lập trình và tôi tin rằng mình đã học hỏi được ít nhiều điều gì đó. 🤷‍♂️",
+    "heading2": "Tôi nắm vững các ngôn ngữ huyền thoại như là",
+    "heading3": "Lĩnh vực quan tâm của tôi là",
+    "heading4": "xây dựng các công nghệ web mới và các sản phẩm liên quan",
+    "heading5": "Bất cứ khi nào có thể, tôi cũng áp dụng niềm đam mê phát triển sản phẩm của mình với"
+  },
+  "experience": {
+    "title": "Kinh nghiệm làm việc"
+  },
+  "skill": {
+    "title": "Kỹ năng Thịnh Hành"
+  },
+  "manageCV": {
+    "title": "Công cụ tốt nhất hỗ trợ quá trình ứng tuyển việc làm của bạn"
+  },
+  "job": {
+    "newjob": "Công Việc Mới Nhất",
+    "viewAll": "Xem Tất Cả",
+    "job": "Công Việc",
+    "listTitle": "Danh sách công việc",
+    "loading": "Đang tải...",
+    "blurAlt": "Ảnh nền mờ",
+    "newIconAlt": "Icon mới",
+    "companyLogoAlt": "Logo công ty",
+    "salary": "{{value}} VNĐ",
+    "levelUndefined": "Không xác định",
+    "requiredSkills": "Kỹ năng yêu cầu:"
+  },
+  "company": {
+    "newcompany": "Nhà Tuyển Dụng Hàng Đầu",
+    "viewAll": "Xem Tất Cả",
+    "company": "Công Ty"
+  },
+  "introduction": {
+    "title": "là nền tảng tuyển dụng hàng đầu, kết nối hàng ngàn ứng viên với các cơ hội việc làm từ những công ty uy tín. Hãy bắt đầu hành trình sự nghiệp của bạn ngay hôm nay!"
+  },
+  "user": {
+    "user": "Người Dùng"
+  },
+  "resumes": {
+    "resumesApproved": "Hồ Sơ Được Duyệt"
+  },
+  "cv": {
+    "title": {
+      "aiCvAnalysis": "Phân Tích CV Bằng AI"
+    },
+    "subtitle": {
+      "getInstantFeedback": "Nhận phản hồi tức thì về CV của bạn và lộ trình nghề nghiệp cá nhân hóa."
+    },
+    "form": {
+      "chooseCvSource": "Chọn nguồn CV của bạn:",
+      "useOnlineProfile": "Sử Dụng Hồ Sơ Online Của Tôi",
+      "uploadNewCv": "Tải Lên CV Mới",
+      "uploadCvLabel": "Tải lên CV của bạn (PDF, DOC, DOCX)",
+      "usingOnlineProfile": "Sử dụng hồ sơ online",
+      "defaultProfile": "Hồ sơ Mặc định"
+    },
+    "alert": {
+      "noOnlineProfilePart1": "Bạn chưa có Hồ sơ Online. Vui lòng",
+      "createOne": "tạo một hồ sơ",
+      "noOnlineProfilePart2": "hoặc tải lên một tệp."
+    },
+    "auth": {
+      "loginRequiredTitle": "Yêu Cầu Đăng Nhập",
+      "loginRequiredMessage": "Vui lòng đăng nhập để sử dụng tính năng Phân tích CV bằng AI.",
+      "goToLoginPage": "Đi đến trang Đăng nhập"
+    },
+    "loading": {
+      "loadingProfile": "Đang tải hồ sơ của bạn..."
+    },
+    "action": {
+      "startAiEvaluation": "Bắt Đầu Đánh Giá Bằng AI",
+      "analyzing": "Đang phân tích...",
+      "view": "Xem"
+    },
+    "error": {
+      "selectCVFile": "Vui lòng chọn một tệp CV để đánh giá.",
+      "unknownError": "Đã xảy ra lỗi không xác định.",
+      "failedToGetEvaluation": "Không thể nhận kết quả đánh giá từ AI."
+    },
+    "message": {
+      "couldNotFetchProfile": "Không thể tải dữ liệu hồ sơ của bạn.",
+      "aiEvaluationCompleted": "Đánh giá bằng AI hoàn tất thành công!",
+      "errorDuringEvaluation": "Đã xảy ra lỗi trong quá trình đánh giá."
+    },
+    "result": {
+      "aiEvaluationResult": "Kết Quả Đánh Giá Bằng AI",
+      "overallScore": "Điểm Tổng Thể",
+      "summary": "Tóm Tắt",
+      "estimatedSalary": "Mức Lương Ước Tính",
+      "strengths": "Điểm Mạnh",
+      "improvements": "Lĩnh Vực Cần Cải Thiện",
+      "suggestedRoadmap": "Lộ Trình Cải Thiện Đề Xuất",
+      "step": "Bước {{step}}",
+      "relevantJobs": "Việc Làm Phù Hợp Với Bạn",
+      "jobTitleAtCompany": "{{title}} tại {{company}}"
+    }
+  }
+}

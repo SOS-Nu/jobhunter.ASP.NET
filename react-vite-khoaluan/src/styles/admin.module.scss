@@ -1,0 +1,17 @@
+.upsert-job-container {
+  padding: 10px 30px;
+  border-radius: 5px;
+  min-height: 100vh;
+  height: auto;
+
+  .title {
+    padding: 10px 0 20px 0;
+  }
+
+  .ant-upload-drag-icon {
+    color: white !important;
+  }
+  .ant-upload-text {
+    color: white !important;
+  }
+}

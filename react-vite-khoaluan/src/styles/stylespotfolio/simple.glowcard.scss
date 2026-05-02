@@ -1,0 +1,129 @@
+// @/styles/simple.glowcard.scss (Đã tối ưu)
+
+.simple-glow-container {
+  width: 100%;
+  height: 100%;
+}
+
+.simple-glow-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border: 1px solid var(--border-hero-right);
+  position: relative; // <-- Giữ position relative
+  background-color: var(--glow-card-background);
+  color: var(--text-white-1);
+  border-radius: 0.75rem;
+  width: 100%;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(
+      --glow-card-hover-background,
+      rgba(255, 255, 255, 0.05)
+    );
+    border: 2px 2px;
+  }
+}
+
+.experience-container {
+  /* (Giữ nguyên toàn bộ nội dung của .experience-container) */
+  .duration-text {
+    display: flex;
+    justify-content: center;
+
+    p {
+      color: var(--text-pink-100);
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .details {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.25rem 0.75rem;
+
+    .icon {
+      color: #8b5cf6;
+      transition: transform 0.3s ease; /* Tối ưu tốt: chỉ animate transform */
+
+      &:hover {
+        transform: scale(1.25);
+      }
+
+      img {
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+      }
+    }
+
+    .info {
+      p {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        text-transform: uppercase;
+
+        &.title {
+          font-size: 1rem;
+        }
+
+        &.company {
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  /* (Giữ nguyên media query - đã tối ưu tốt) */
+  .simple-glow-card {
+    border: 1px solid var(--border-hero-right);
+    padding: 0px;
+    transition: none; /* Tắt transition trên mobile để tối ưu */
+  }
+
+  .simple-glow-card:hover {
+    background-color: var(
+      --glow-card-background
+    ); /* Không thay đổi màu khi hover trên mobile */
+  }
+}
+
+/* === BẮT ĐẦU TỐI ƯU BOX-SHADOW === */
+.selected-job-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--selected-job-card) !important;
+
+  /* Xóa box-shadow trực tiếp từ đây */
+  /* box-shadow: 0 0 10px var(--selected-job-card) !important; */
+
+  position: relative; /* Đảm bảo relative để định vị ::after */
+  z-index: 2;
+
+  /* Thêm pseudo-element để chứa shadow */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px; /* Phủ lên viền */
+    border-radius: inherit; /* Kế thừa bo góc */
+
+    /* Áp dụng box-shadow vào đây */
+    box-shadow: 0 0 10px var(--selected-job-card);
+
+    opacity: 1; /* Mặc định là hiện (vì class này chỉ được thêm khi selected) */
+    z-index: -1;
+
+    /* Thêm transition cho mượt mà (tùy chọn) */
+    transition: opacity 0.3s ease;
+  }
+}
+
+/* Nếu bạn muốn animation mờ dần khi bỏ chọn, 
+  bạn cần một class cha bọc .simple-glow-card 
+  và định nghĩa ::after với opacity: 0
+*/

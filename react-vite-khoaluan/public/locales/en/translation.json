@@ -1,0 +1,227 @@
+{
+  "company_review": {
+    "title": "AI Insights",
+    "loading": "AI is analyzing data...",
+    "error": "AI cannot evaluate at this time",
+    "close_btn": "I understand",
+    "scam": {
+      "warning": "Risk factors detected",
+      "safe": "Safety check passed"
+    },
+    "benefits": {
+      "title": "Benefits & Insurance",
+      "insurance": "Social Insurance",
+      "salary": "Salary & Bonuses"
+    },
+    "environment": {
+      "title": "Work Environment",
+      "balance": "Work-Life Balance",
+      "pressure": "Work Pressure",
+      "culture": "Culture"
+    }
+  },
+  "hero": {
+    "cv": "Resume / CV",
+    "jobDesc": "Job Description",
+    "salary": "Salary Range",
+    "experience": "Experience",
+    "skills": "Top Skills",
+    "benefits": "Benefits",
+    "degree": "Degrees",
+    "referral": "Referral Letter",
+    "review": "Company Review",
+    "remote": "Remote Work",
+    "flexible": "Flexible Hours",
+    "startup": "Start-up Spirit",
+    "outputOffer": "Received Offer",
+    "outputSalary": "Attractive Pay",
+    "outputCulture": "Culture Fit"
+  },
+  "appHeader": {
+    "brand": "JobHunter",
+    "home": "Home",
+    "findjobs": "Find Job",
+    "company": "Find company",
+    "project": "Project",
+    "contact": "Contact",
+    "about": "About",
+    "recruiter": "Recruiter",
+    "evaluateCV": "CV Evaluation",
+    "profileCV": "CV Profile",
+    "onlineResume": "Online Resume",
+    "cvPage": "CV Page",
+    "manageAccount": "Manage Account",
+    "adminPage": "Admin Page",
+    "messages": "Messages",
+    "logout": "Logout",
+    "logoutSuccess": "Logout successful",
+    "login": "Login",
+    "languageEn": "English",
+    "languageVi": "Vietnamese",
+    "offcanvasTitle": "Features"
+  },
+  "searchClient": {
+    "aiPlaceholder": "Enter the job description you want, your skills...",
+    "companyPlaceholder": "Enter the name of the company you are interested in...",
+    "jobPlaceholder": "Enter job title, e.g., Java, Frontend, DevOps...",
+    "typewriter1": "Find Jobs quickly",
+    "typewriter2": "latest nationwide",
+    "typewriter3": "Find Jobs By AI",
+    "selectJob": "Job Title",
+    "selectCompany": "Company",
+    "selectAI": "Use AI",
+    "locationPlaceholder": "Location",
+    "locationNotFound": "Not found",
+    "searchButton": "Search",
+    "uploadCV": "Upload CV",
+    "defaultPrompt": "Find suitable jobs based on my CV",
+    "searchError": "Error while performing search:"
+  },
+  "banner": {
+    "title": "Find Your Dream Job With",
+    "subtitle": "Discover thousands of job opportunities from top companies. Start your career journey today!",
+    "button": "Find Jobs Now",
+    "cta": "Discover Now!"
+  },
+  "footer": {
+    "about": {
+      "title": "About Us",
+      "items": ["Introduction", "Careers", "News", "Partners"]
+    },
+    "services": {
+      "title": "Services",
+      "items": [
+        "CV Consulting",
+        "Mock Interview",
+        "Roadmap Building",
+        "Workshop"
+      ]
+    },
+    "career": {
+      "title": "Career",
+      "items": ["Blog", "Guides", "Events", "Community"]
+    },
+    "contact": {
+      "title": "Contact Me",
+      "hotline": "Hotline: ",
+      "email": "Email: "
+    },
+    "newsletter": {
+      "title": "Subscribe to our newsletter",
+      "placeholder": "Enter your email",
+      "button": "Subscribe"
+    },
+    "app": {
+      "title": "Download App",
+      "download": "Get it on",
+      "googlePlay": "Google Play",
+      "appStore": "App Store"
+    },
+    "copyright": "JobHunter Job opportunities, just a click away! © President SOS Nu {{year}}. All rights reserved."
+  },
+  "heroSection": {
+    "exp": "My Skill",
+    "cv": "Get Resume"
+  },
+  "introSection": {
+    "about": "About me",
+    "and": "and",
+    "heading1": "I fell in love with programming and I have at least learnt something, I think… 🤷‍♂️",
+    "heading2": "I am fluent in classics like",
+    "heading3": "My field of Interest's are building new",
+    "heading4": "Web Technologies and Products",
+    "heading5": "Whenever possible, I also apply my passion for developing products with"
+  },
+  "experience": {
+    "title": "Experiences"
+  },
+  "skill": {
+    "title": "Skills Hot"
+  },
+  "manageCV": {
+    "title": " The best tools to support your job application journey"
+  },
+  "job": {
+    "newjob": "New Jobs",
+    "viewAll": "View All Jobs",
+    "job": "Job",
+    "listTitle": "Job List",
+    "loading": "Loading...",
+    "blurAlt": "Blur background",
+    "newIconAlt": "New icon",
+    "companyLogoAlt": "Company logo",
+    "salary": "$ {{value}}",
+    "levelUndefined": "Undefined",
+    "requiredSkills": "Required Skills:"
+  },
+  "company": {
+    "newcompany": "Recruiter Top",
+    "viewAll": "View All Companies",
+    "company": "Companies"
+  },
+  "introduction": {
+    "title": "is the leading recruitment platform, connecting thousands of candidates with job opportunities from reputable companies. Start your career today!"
+  },
+  "user": {
+    "user": "User"
+  },
+  "resumes": {
+    "resumesApproved": "Resumes Approved"
+  },
+  "cv": {
+    "title": {
+      "aiCvAnalysis": "AI-Powered CV Analysis"
+    },
+    "subtitle": {
+      "getInstantFeedback": "Get instant feedback on your CV and a personalized career roadmap."
+    },
+    "form": {
+      "chooseCvSource": "Choose your CV source:",
+      "useOnlineProfile": "Use My Online Profile",
+      "uploadNewCv": "Upload a New CV",
+      "uploadCvLabel": "Upload your CV (PDF, DOC, DOCX)",
+      "usingOnlineProfile": "Using online profile",
+      "defaultProfile": "Default Profile"
+    },
+    "alert": {
+      "noOnlineProfilePart1": "You don't have an Online Profile yet. Please",
+      "createOne": "create one",
+      "noOnlineProfilePart2": "or upload a file."
+    },
+    "auth": {
+      "loginRequiredTitle": "Login Required",
+      "loginRequiredMessage": "Please log in to use the AI CV Analysis feature.",
+      "goToLoginPage": "Go to Login Page"
+    },
+    "loading": {
+      "loadingProfile": "Loading your profile..."
+    },
+    "action": {
+      "startAiEvaluation": "Start AI Evaluation",
+      "analyzing": "Analyzing...",
+      "view": "View"
+    },
+    "error": {
+      "selectCVFile": "Please select a CV file to evaluate.",
+      "unknownError": "An unknown error occurred.",
+      "failedToGetEvaluation": "Failed to get evaluation from AI."
+    },
+    "message": {
+      "couldNotFetchProfile": "Could not fetch your profile data.",
+      "aiEvaluationCompleted": "AI evaluation completed successfully!",
+      "errorDuringEvaluation": "An error occurred during evaluation."
+    },
+    "result": {
+      "aiEvaluationResult": "AI Evaluation Result",
+      "overallScore": "Overall Score",
+      "summary": "Summary",
+      "estimatedSalary": "Estimated Salary",
+      "strengths": "Strengths",
+      "improvements": "Areas for Improvement",
+      "suggestedRoadmap": "Suggested Improvement Roadmap",
+      "step": "Step {{step}}",
+      "relevantJobs": "Relevant Jobs For You",
+      "jobTitleAtCompany": "{{title}} at {{company}}"
+    }
+  }
+}

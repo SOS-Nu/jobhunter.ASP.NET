@@ -1,0 +1,54 @@
+:root {
+  --glow-1: #ffc400;
+  --glow-2: #ff9100;
+  --glow-3: #ff530f;
+  --border-inactive: var(--border-input-search);
+  --input-background: var(--background-input-search);
+  --text-color: #e1dfdf;
+
+  /* THÊM CÁC BIẾN MÀU MỚI TỪ FILE MẪU */
+  --capra-ramp-1: #ffc400;
+  --capra-ramp-2: #ff9100;
+  --capra-ramp-3: #ff530f;
+  --capra-ramp-4: #e62c6d; /* Màu mới */
+  --capra-ramp-5: #b25aff; /* Màu mới */
+}
+
+.manage-cv-wrapper {
+  position: relative;
+
+  // Tùy chỉnh cho mobile
+  @media (max-width: 767px) {
+    .manage-cv-wrapper {
+      background-size: contain; // Điều chỉnh cho màn hình nhỏ
+    }
+  }
+  /* 2. Màn Medium (768px) trở lên */
+  @media (max-width: 1642px) {
+    // top: 10px;
+    // margin-bottom: 60px;
+  }
+}
+
+.wave {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+}
+.wave img {
+  width: 24px; /* Điều chỉnh kích thước ảnh */
+  height: 24px;
+}
+
+#title-managecv {
+  font-size: 2rem; // tương đương 40px
+  font-weight: 500; // Có thể dùng 500 hoặc bold tùy ý
+
+  /* Đây là dải màu gradient giống hệt "Hello, SOS" */
+  background: var(--text-title-managecv);
+
+  /* Các thuộc tính để áp dụng gradient vào chữ */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

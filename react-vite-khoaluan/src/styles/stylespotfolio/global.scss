@@ -1,0 +1,433 @@
+//global.scss
+@import "bootstrap/scss/bootstrap";
+@import "./header.client.scss";
+@import "./animation.scss";
+@import "./variable.scss";
+@import "./footer.client.scss";
+@import "./search.client.scss";
+@import "./notification.scss";
+@import "./manage.cv.scss";
+@import "./job.glowcard.scss";
+@import "./simple.glowcard.scss";
+@import "./company.glow-card.scss";
+@import "./pagination.scss";
+@import "../client.detail.job.scss";
+@import "../panel-detail.scss";
+@import "./company/reviews";
+@import "./create-online-resume.scss";
+@import "./public-cv.scss";
+@import "./skill.scss";
+@import "./manage-account.scss";
+@import "./candicaterecruiment/candicate.resulte.scss";
+@import "./chat/detail.scss";
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.brand-green {
+  color: var(--brand-name-400);
+}
+
+.brand-red {
+  background: linear-gradient(
+    to right,
+    #ec4899,
+    #8b5cf6
+  ); // Gradient giống resize-button
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+a {
+  &.highlight {
+    color: var(--brand-social);
+  }
+}
+
+body {
+  background-color: var(--background-body);
+  // font-family: "Raleway", serif !important;
+  // -webkit-font-smoothing: antialiased;
+  // -moz-osx-font-smoothing: grayscale;
+  // color: white;
+}
+
+.bg-body-tertiary {
+  background-color: var(--background-body-tertiary) !important;
+}
+
+.text-pink-100 {
+  color: var(--text-pink-100);
+}
+
+.text-pink-200 {
+  color: var(--text-pink-200);
+}
+
+.text-yellow-500 {
+  color: var(--text-yellow-500);
+}
+
+.text-red-500 {
+  color: var(--text-red-500);
+}
+
+.text-green-700 {
+  color: var(--text-green-700);
+}
+
+.text-blue-100 {
+  color: var(--text-blue-100);
+}
+
+.text-white-0 {
+  color: var(--text-white);
+}
+
+.resize-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 9999px;
+  background-image: var(--resize-button);
+  padding: 15px 25px;
+  text-align: center;
+  color: white;
+  text-decoration: none;
+  border: none;
+  font-weight: 600;
+
+  &:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+}
+
+.divider {
+  height: 1px;
+  border-top: 1px solid var(--border-hero-right);
+}
+
+/* --------- */
+/*Scrollbar   */
+/* --------- */
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--scroll-track-background);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb-background);
+  border-radius: 12px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  border-radius: 12px;
+}
+
+.dropdown-toggle::after {
+  display: none;
+}
+
+.project-card {
+  padding-top: 50px !important;
+  padding-bottom: 50px !important;
+  padding-left: 25px !important;
+  padding-right: 25px !important;
+  height: auto !important;
+  cursor: pointer;
+}
+
+.project-card-view {
+  box-shadow: 0 3px 3px 3px var(--border-hero-right);
+  color: var(--text-white);
+  background-color: transparent !important;
+  opacity: 0.9 !important;
+  transition: all 0.5s ease 0s !important;
+  height: 100% !important;
+
+  &:hover {
+    border-color: var(--brand-social);
+  }
+}
+
+.blog-card {
+  padding-top: 50px !important;
+  padding-bottom: 50px !important;
+  padding-left: 25px !important;
+  padding-right: 25px !important;
+  height: auto !important;
+}
+// .blog-card-view {
+//     background-color: transparent !important;
+//     box-shadow: 0 3px 3px 2px rgba(145, 77, 161, 0.459) !important;
+//     color: white !important;
+//     transition: all 0.5s ease 0s !important;
+//     height: 100% !important;
+// }
+
+// .blog-link {
+//     color: white !important;
+//     text-decoration: none !important;
+// }
+
+// .blog-link:hover {
+//     cursor: pointer !important;
+// }
+
+// .blog-card-view:hover {
+//     transform: scale(1.02) !important;
+//     overflow: hidden !important;
+//     box-shadow: 0 3px 3px 5px rgba(155, 88, 173, 0.65) !important;
+// }
+
+// .card-img-top {
+//     padding: 20px !important;
+//     opacity: 0.8 !important;
+//     border-radius: 10px !important;
+// }
+
+// .blog-img {
+//     padding: 0px !important;
+//     opacity: 0.8 !important;
+//     border-radius: 0px !important;
+// }
+
+// .btn-primary {
+//     color: #fff !important;
+//     background-color: #623686 !important;
+//     border-color: #623686 !important;
+// }
+
+// .btn-primary:hover {
+//     color: #fff !important;
+//     background-color: #6d20c5d7 !important;
+//     border-color: #6d20c5d7 !important;
+// }
+
+// .btn:focus {
+//     outline: none !important;
+//     box-shadow: none !important;
+// }
+
+// .project-heading {
+//     color: white !important;
+//     font-size: 2.3em !important;
+//     font-weight: 500 !important;
+//     padding-top: 10px !important;
+// }
+
+// "Nhuộm màu" cho nút Primary
+.btn-primary {
+  // Sử dụng :global để ghi đè class của Bootstrap một cách chắc chắn
+  background: var(--resize-button) !important;
+  border: none !important;
+  transition: opacity 0.3s ease;
+  padding: 0.75rem;
+  border-radius: 20px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(var(--brand-social-rgb), 0.4);
+  }
+
+  &:disabled {
+    background: var(--resize-button) !important;
+    opacity: 0.65;
+  }
+}
+
+.btn-success {
+  // Sử dụng :global để ghi đè class của Bootstrap một cách chắc chắn
+  background: var(--linear-gradient-blue-purple) !important;
+  border: none !important;
+  transition: opacity 0.3s ease;
+  padding: 0.75rem;
+  border-radius: 20px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(var(--brand-social-rgb), 0.4);
+  }
+
+  &:disabled {
+    background: var(--linear-gradient-blue-purple) !important;
+    opacity: 0.65;
+  }
+}
+
+.btn-danger {
+  // Sử dụng :global để ghi đè class của Bootstrap một cách chắc chắn
+  background: var(--linear-gradient-failure) !important;
+  border: none !important;
+  transition: opacity 0.3s ease;
+  padding: 0.75rem;
+  border-radius: 20px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(var(--brand-social-rgb), 0.4);
+  }
+
+  &:disabled {
+    background: var(--resize-button) !important;
+    opacity: 0.65;
+  }
+}
+
+//react goc
+/* Keyframes cho animation xoay */
+@-moz-keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes spin {
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+/* Style cho header */
+.header-section {
+  display: block;
+  width: 100%;
+  height: 55px;
+  background-color: #222831;
+  position: fixed;
+  z-index: 1001;
+
+  .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0px !important;
+    .react-icon {
+      width: 35px;
+      height: 35px;
+      cursor: pointer;
+      color: #1677ff;
+
+      animation: spin 10s linear infinite;
+    }
+    svg {
+      cursor: pointer;
+      color: #1677ff;
+      font-size: 30px;
+      margin-top: 7px;
+      animation: spin 20s linear infinite;
+    }
+  }
+
+  .top-menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .extra {
+      a,
+      span {
+        cursor: pointer;
+        display: block;
+        color: #a7a7a7;
+        text-decoration: none;
+
+        &:hover {
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 55px;
+    color: white;
+  }
+}
+/* Style cho container (nếu cần) */
+.container {
+  padding-right: 0px;
+  padding-left: 0px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  .container {
+    width: 750px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    width: 970px;
+  }
+}
+
+@media (min-width: 1260px) {
+  .container {
+    width: 1260px;
+  }
+}
+
+// .layout-admin {
+//   // Ghi đè style cho link bên trong menu của Ant Design
+//   .ant-menu-item a {
+//     // Bỏ gạch chân
+//     text-decoration: none;
+//
+//     // Xử lý khi hover (nếu Bootstrap cũng thêm gạch chân khi hover)
+//     &:hover {
+//       text-decoration: none;
+//     }
+//   }
+// }
+
+.input-group {
+  .form-control {
+    font-size: 0.875rem;
+    background-color: var(--background-body);
+    color: var(--text-white);
+    border-color: var(--border-hero-right);
+    &:focus {
+      border-color: var(--brand-social); // Dùng màu accent khi focus
+      box-shadow: 0 0 0 0.25rem rgba(var(--brand-social-rgb), 0.25);
+    }
+  }
+
+  .btn-upload {
+    border: 1px solid var(--border-hero-right);
+    input[type="file"] {
+      display: none;
+    }
+  }
+
+  .btn-voice {
+    &.listening {
+      animation: pulse 1.5s infinite;
+    }
+  }
+}

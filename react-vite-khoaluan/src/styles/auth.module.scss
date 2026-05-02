@@ -1,0 +1,98 @@
+/* styles/auth.bootstrap.module.scss */
+
+// Lớp cha để áp dụng các biến CSS toàn cục
+.login-page-bootstrap {
+  // Bootstrap đã tự xử lý màu nền và chữ thông qua thuộc tính [data-bs-theme]
+  // trên thẻ <html> mà bạn đã có. Chúng ta không cần định nghĩa lại ở đây.
+  // background-color: var(--background-body);
+}
+
+// "Nhuộm màu" cho Card đăng nhập
+.login-card {
+  width: 100%;
+  max-width: 450px; // Giới hạn chiều rộng
+  background-color: var(--glow-card-background) !important;
+  color: var(--text-white) !important;
+  border: 1px solid var(--border-hero-right) !important;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+  // Ghi đè màu chữ của Card.Title, Card.Text nếu cần
+  h2,
+  .form-label,
+  p {
+    color: var(--text-white) !important;
+  }
+}
+
+// "Nhuộm màu" cho các ô Input
+.login-card .form-control {
+  background-color: var(--background-body);
+  color: var(--text-white);
+  border: 1px solid var(--border-hero-right);
+  padding: 0.75rem 1.25rem;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out; // Thêm transition cho mượt
+
+  // Xử lý màu sắc khi focus vào input
+  &:focus {
+    // Thêm !important vào 2 dòng dưới đây
+    border-color: var(--brand-social) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--brand-social-rgb), 0.25) !important;
+    outline: 0;
+  }
+
+  // Màu cho placeholder text
+  &::placeholder {
+    color: #888;
+  }
+}
+
+// "Nhuộm màu" cho đường kẻ
+.login-card hr {
+  border-top: 1px solid var(--border-hero-right);
+}
+
+// "Nhuộm màu" cho link Đăng Ký
+.register-link {
+  color: var(--brand-social) !important;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Để sử dụng được biến --brand-social-rgb, bạn cần thêm nó vào file variable.scss.
+// Ví dụ: --brand-social: #ec4899; -> --brand-social-rgb: 236, 72, 153;
+
+// Thêm vào cuối file
+// Style cho nút đăng nhập với Google tùy chỉnh
+.google-login-btn {
+  background-color: #ffffff; // Nền trắng cho light mode
+  color: #333; // Chữ đen cho light mode
+  border: 1px solid var(--border-input-search) !important; // Dùng border của theme
+  transition: background-color 0.3s ease;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+
+  &:hover {
+    background-color: #f8f9fa; // Hơi xám một chút khi hover
+  }
+}
+
+// Tự động đổi màu khi ở Dark Theme
+[data-bs-theme="dark"] {
+  .google-login-btn {
+    // Trong theme dark, chúng ta sẽ cho nền tối và chữ sáng
+    background-color: #424242; // Một màu xám tối
+    color: #ffffff; // Chữ trắng
+    border-color: #555 !important;
+
+    &:hover {
+      background-color: #505050; // Hơi sáng lên một chút khi hover
+    }
+  }
+}

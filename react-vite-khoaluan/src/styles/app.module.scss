@@ -1,0 +1,18 @@
+// @import 'variables.scss';
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.content-app {
+  height: 100%;
+  width: 100%;
+  padding-top: 55px;
+  flex-grow: 1;
+}
+
+.layout-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; // Rất quan trọng: đảm bảo layout chiếm ít nhất toàn bộ chiều cao màn hình
+}

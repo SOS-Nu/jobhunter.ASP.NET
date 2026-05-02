@@ -1,0 +1,6 @@
+/* Đặt z-index cho container của antd notification */
+.ant-notification {
+  /* Giá trị này PHẢI CAO HƠN z-index của header bạn tìm được ở Bước 1 */
+  /* Ví dụ, nếu header của bạn có z-index: 1000, hãy đặt ở đây là 1001 hoặc cao hơn */
+  z-index: 10000;
+}

@@ -1,0 +1,193 @@
+/* Style cho nav-link với hiệu ứng thanh chạy bên dưới */
+.nav-link {
+  position: relative;
+  transition:
+    color 0.4s ease,
+    background-color 0.3s ease;
+  padding-bottom: 8px; /* Khoảng cách cho thanh underline */
+
+  /* Thanh underline */
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 10%; /* Căn giữa (100% - 80% = 20% / 2 = 10%) */
+    width: 80%; /* Luôn có width 80% */
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      #ec4899,
+      #8b5cf6
+    ); // Gradient giống resize-button
+
+    /* === THAY ĐỔI TỐI ƯU === */
+    transform: scaleX(0); /* Bắt đầu với tỷ lệ 0 */
+    transform-origin: center; /* Scale từ vị trí giữa */
+    transition: transform 0.4s ease; /* Animate thuộc tính transform */
+  }
+
+  &:hover {
+    &::after {
+      transform: scaleX(1); /* Phóng to ra 100% (của 80% width) */
+    }
+    color: var(--brand-social);
+  }
+
+  &.active::after {
+    transform: scaleX(1); /* Phóng to ra 100% (của 80% width) */
+  }
+
+  &.active {
+    color: var(--brand-social);
+  }
+}
+
+/* Style cho nút nổi bật với icon động */
+.nav-link.featured {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .featured-icon {
+    font-size: 16px;
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+}
+
+/* Animation cho icon động */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Style cho dropdown tùy chỉnh */
+.dropdown-menu {
+  background-color: var(--background-body-tertiary);
+  border: 1px solid var(--border-hero-right);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0;
+
+  .dropdown-item {
+    padding: 0.5rem 1.5rem;
+    color: var(--text-white);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+
+    &:hover {
+      background-color: var(--brand-social);
+      color: #fff;
+      background: linear-gradient(
+        to right,
+        #ec4899,
+        #8b5cf6
+      ); // Gradient giống resize-button
+    }
+  }
+}
+
+/* Tùy chỉnh dropdown toggle */
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-white);
+
+  &:hover {
+    color: var(--brand-social);
+  }
+}
+
+.profile-cv-dropdown .dropdown-menu {
+  border: 2px solid transparent;
+  border-image: linear-gradient(to right, #ffc400, #ff9100, #ff530f) 1;
+  border-radius: 8px;
+  background-color: var(--background-body-tertiary);
+}
+
+.user-dropdown-custom .dropdown-menu {
+  border: 2px solid transparent;
+  border-image: linear-gradient(to right, #ffc400, #ff9100, #ff530f) 1;
+  border-radius: 8px;
+  background-color: var(--background-body-tertiary);
+  padding: 0.5rem;
+}
+/* --- Định nghĩa animation bounce --- */
+@keyframes bounce-new {
+  0%,
+  100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* --- Style cho nhãn "NEW" --- */
+.new-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+
+  background: linear-gradient(to right, #ec4899, #8b5cf6);
+  color: white;
+
+  font-size: 10px;
+  font-weight: bold;
+
+  padding: 1px 6px;
+  border-radius: 9999px;
+
+  animation: bounce-new 1s infinite;
+}
+
+.nav-link.position-relative {
+  position: relative;
+}
+
+.nav-item-icon,
+.nav-item-dropdown .dropdown-toggle {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-bottom: 8px;
+}
+
+.nav-item-dropdown .dropdown-toggle {
+  position: relative;
+  top: 1.5px;
+}
+
+.nav-item-icon::after {
+  display: none !important;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 8px;
+
+  object-fit: cover;
+  border: 1px solid var(--brand-name-300);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: linear-gradient(to right, #ec4899, #8b5cf6);
+  font-weight: bold;
+  font-size: 14px;
+}

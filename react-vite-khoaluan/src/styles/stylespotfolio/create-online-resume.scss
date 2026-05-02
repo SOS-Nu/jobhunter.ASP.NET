@@ -1,0 +1,93 @@
+// src/pages/resume/create-online-resume.scss
+
+.create-resume-container {
+  .resume-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    // Sử dụng gradient từ theme có sẵn
+    background: var(--text-title-managecv);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  .resume-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-white);
+    margin-bottom: 2rem;
+  }
+
+  .resume-card {
+    background-color: var(--background-body-tertiary);
+    border: 1px solid var(--border-hero-right);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease-in-out;
+
+    &:hover {
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      border-color: var(--brand-social);
+    }
+
+    .card-header {
+      background-color: rgba(
+        139,
+        92,
+        246,
+        0.1
+      ); // Màu gradient nhẹ làm nền header
+      border-bottom: 1px solid var(--border-hero-right);
+      font-weight: 500;
+      color: var(--text-white);
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--text-white);
+    }
+
+    // Antd Select styles override
+    .ant-select {
+      .ant-select-selector {
+        background-color: var(--input-background) !important;
+        border: 1px solid var(--border-inactive) !important;
+        color: var(--text-white);
+      }
+      .ant-select-selection-item,
+      .ant-select-selection-placeholder {
+        color: var(--text-white) !important;
+      }
+      .ant-select-arrow {
+        color: var(--text-white);
+      }
+      .ant-select-clear {
+        background-color: var(--background-body-tertiary);
+        color: var(--text-white);
+      }
+    }
+  }
+
+  .accordion {
+    --bs-accordion-bg: transparent;
+    --bs-accordion-border-color: var(--border-hero-right);
+    --bs-accordion-btn-color: var(--text-white);
+    --bs-accordion-btn-focus-box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.3);
+    --bs-accordion-active-color: var(--brand-social);
+    --bs-accordion-active-bg: rgba(139, 92, 246, 0.1);
+
+    .accordion-item {
+      background-color: transparent;
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(to right, #ec4899, #8b5cf6);
+    border: none;
+    &:hover,
+    &:focus {
+      opacity: 0.9;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+    }
+  }
+}

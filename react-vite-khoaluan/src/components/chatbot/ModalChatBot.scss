@@ -1,0 +1,242 @@
+/* src/components/chatbot/ModalChatBot.scss */
+
+/* * ĐÃ ĐƯỢC CẬP NHẬT ĐỂ SỬ DỤNG BIẾN CSS TỪ variable.scss
+ * Tự động hỗ trợ Light/Dark mode.
+ */
+.tilte-chatbot {
+  background: var(--linear-gradient-blue-purple);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+// Nút bấm kích hoạt chatbot
+.chatbot-trigger-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 1040;
+  padding: 0.75rem;
+  background: var(--resize-button); // Dùng gradient nút chính
+  color: #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(var(--brand-social-rgb), 0.15);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(var(--brand-social-rgb), 0.4);
+  }
+}
+
+// === PHẦN QUAN TRỌNG NHẤT ===
+// Khung modal chatbot
+.chatbot-modal {
+  position: fixed;
+  bottom: 110px;
+  right: 40px;
+  z-index: 1050;
+  width: 350px;
+
+  /* Style được copy từ .right-panel-container */
+  background-color: var(--background-body-tertiary);
+  border: 1px solid var(--border-hero-right);
+  border-radius: 8px;
+  /* Hết phần copy */
+
+  color: var(--text-white); // Màu chữ chính
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+// === HẾT PHẦN QUAN TRỌNG ===
+
+// Header
+.chatbot-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-hero-right); // Dùng border theme
+  position: relative;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chatbot-close-btn {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--text-gray); // Dùng màu text phụ
+
+    &:hover {
+      color: var(--text-red-500); // Dùng màu đỏ
+    }
+  }
+}
+
+// Khung lịch sử chat
+.chat-history {
+  min-height: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  /* Thanh cuộn giống hệt global.scss */
+  &::-webkit-scrollbar {
+    width: 7px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--scroll-track-background);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb-background);
+    border-radius: 12px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+  }
+}
+
+// Từng tin nhắn
+.chat-message {
+  display: flex;
+
+  &.message-user {
+    justify-content: flex-end;
+    .message-bubble {
+      background: var(--resize-button); // Gradient nút chính
+      color: #fff;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  &.message-bot {
+    justify-content: flex-start;
+    .message-bubble {
+      background-color: var(--skill-card-background); // Nền phụ
+      color: var(--text-white);
+      border-bottom-left-radius: 0;
+    }
+  }
+}
+
+.message-bubble {
+  max-width: 85%;
+  padding: 0.75rem;
+  border-radius: 12px;
+  word-wrap: break-word;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+
+.message-username {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  color: var(--text-white); // Dùng màu text phụ
+  opacity: 0.8;
+}
+
+.message-content {
+  font-size: 0.875rem;
+
+  p {
+    margin: 0.5rem 0;
+  }
+  ol,
+  ul {
+    padding-left: 1.2rem;
+  }
+  a {
+    color: var(--brand-social); // Dùng màu accent
+    text-decoration: none;
+    font-weight: 500;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .spinner-border {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Các nút gợi ý
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.suggestion-item {
+  font-size: 0.75rem;
+  // color: var(--brand-social); // Dùng màu accent
+  background-color: var(--skill-card-background); // Nền phụ
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-hero-right); // Dùng border theme
+
+  &:hover {
+    background: var(--linear-gradient-blue-purple); // Nền phụ khi hover
+    color: white;
+  }
+}
+
+// Khu vực input
+.chatbot-input-area {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-hero-right); // Dùng border theme
+}
+
+.file-info {
+  font-size: 0.75rem;
+  color: var(--text-gray); // Dùng màu text phụ
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--text-red-500), 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--text-red-500), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--text-red-500), 0);
+  }
+}

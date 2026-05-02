@@ -1,0 +1,130 @@
+.company-reviews-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+
+  // --- Style cho các thông báo hệ thống (Notice) ---
+  .review-notice {
+    padding: 16px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px dashed var(--border-input-search);
+    background-color: rgba(255, 255, 255, 0.02); // Nền tối nhẹ
+    transition: all 0.3s ease;
+
+    .notice-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .notice-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-gray);
+
+      b {
+        color: var(--text-pink-100); // Làm nổi bật chữ "Approved"
+      }
+    }
+
+    // Biến thể khi cần đăng nhập
+    &.auth-required {
+      border-color: var(--text-pink-100);
+      background-color: rgba(var(--brand-social-rgb), 0.05);
+
+      .notice-icon {
+        color: var(--text-pink-100);
+      }
+      .notice-text {
+        color: var(--text-white);
+      }
+    }
+
+    // Biến thể khi chưa đủ điều kiện (Resume)
+    &.permission-denied {
+      border-color: var(--glow-1);
+      .notice-icon {
+        color: var(--glow-1);
+      }
+    }
+  }
+
+  // --- Khu vực Form Gửi Review ---
+  .review-form-section {
+    // Giữ nền mờ nhẹ để phân biệt với danh sách bên dưới
+    background-color: rgba(255, 255, 255, 0.03);
+    // padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border-input-search);
+
+    .ant-comment {
+      background-color: transparent !important; // Khử nền antd
+    }
+  }
+
+  // --- Danh sách Review ---
+  .reviews-list-section {
+    .ant-list-header {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-white);
+      margin-bottom: 20px;
+    }
+
+    .ant-list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 20px; // Khoảng cách giữa các card
+    }
+
+    .review-item-card {
+      // Ép buộc trong suốt
+      background-color: transparent !important;
+      background: transparent !important;
+
+      border: 1px solid var(--border-input-search);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+
+      // Khử nền của bản thân component Comment bên trong
+      .ant-comment,
+      .ant-comment-inner {
+        background-color: transparent !important;
+        background: transparent !important;
+        padding: 0;
+      }
+
+      &:hover {
+        // Chỉ hiện nền cực nhẹ khi hover để người dùng biết đang tương tác
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        border-color: rgba(var(--brand-social-rgb), 0.5);
+        transform: translateY(-2px); // Hiệu ứng nổi nhẹ chuyên nghiệp
+      }
+
+      .ant-comment-content-author-name > a {
+        color: var(--text-white) !important;
+        font-weight: 600;
+        font-size: 0.9rem !important; // 2. Tăng cỡ chữ tên người dùng
+      }
+
+      .review-content {
+        margin-top: 8px;
+        .ant-rate {
+          font-size: 16px;
+          margin-bottom: 8px;
+          display: block;
+        }
+        p {
+          font-size: 1.05rem;
+          color: var(--text-gray);
+          line-height: 1.6;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}

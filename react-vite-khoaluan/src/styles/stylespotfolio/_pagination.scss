@@ -1,0 +1,86 @@
+// src/styles/_pagination.scss
+
+/* Chỉ áp dụng các style này khi <html> có thuộc tính data-bs-theme="dark" */
+html[data-bs-theme="dark"] {
+  .ant-pagination {
+    .ant-pagination-item {
+      background-color: var(
+        --glow-card-background
+      ); // Nền giống như thẻ của bạn
+      border: 1px solid var(--border-input-search);
+      border-radius: 8px; // Bo tròn góc cho mềm mại hơn
+      transition: all 0.3s ease;
+
+      a {
+        color: var(--text-white); // Màu chữ mặc định
+        font-weight: 500;
+      }
+
+      &:hover,
+      &:focus-visible {
+        border-color: var(--brand-social);
+        background-color: transparent;
+
+        a {
+          color: var(--text-white);
+        }
+      }
+    }
+
+    // Kiểu cho nút đang active
+    .ant-pagination-item-active {
+      background: var(--resize-button); // Dùng màu gradient của bạn
+      border-color: var(--brand-social);
+
+      a {
+        color: var(--text-white) !important; // Chữ luôn là màu trắng để nổi bật
+      }
+
+      &:hover,
+      &:focus-visible {
+        a {
+          color: var(--text-white) !important;
+        }
+      }
+    }
+
+    // Kiểu cho các nút tới/lui (prev/next)
+    .ant-pagination-prev,
+    .ant-pagination-next {
+      .ant-pagination-item-link {
+        background-color: var(--glow-card-background);
+        border: 1px solid var(--border-input-search);
+        border-radius: 8px;
+        color: var(--text-white);
+
+        &:hover,
+        &:focus-visible {
+          border-color: var(--brand-social);
+          color: var(--brand-social);
+          background-color: transparent;
+        }
+      }
+
+      &.ant-pagination-disabled .ant-pagination-item-link {
+        background-color: var(--background-input-search);
+        border-color: var(--border-input-search);
+        color: var(--text-white); // Màu xám cho nút bị vô hiệu hóa
+        opacity: 0.5;
+      }
+    }
+
+    // Kiểu cho dấu "..."
+    .ant-pagination-jump-next,
+    .ant-pagination-jump-prev {
+      .ant-pagination-item-container {
+        .ant-pagination-item-ellipsis {
+          color: var(--brand-social) !important;
+        }
+      }
+    }
+
+    // .ant-select-selector {
+    //   display: none;
+    // }
+  }
+}

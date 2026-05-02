@@ -1,0 +1,226 @@
+// src/styles/stylespotfolio/public-cv.scss
+
+.public-cv-wrapper {
+  background-color: var(--background-body-tertiary-rgb-opacity-3);
+  padding: 3rem 0;
+  transition: background-color 0.3s ease;
+}
+
+.public-cv-container {
+  // Card chung
+  .sidebar-card,
+  .content-card {
+    background-color: var(--background-body-tertiary);
+    border: 1px solid var(--border-hero-right);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    // === FIX CUỐI CÙNG: GỠ BỎ DÒNG NÀY ===
+    // height: 100%; // <<<<<<< Gây ra lỗi tràn layout và card bị quá cao
+    transition: all 0.3s ease;
+  }
+
+  // Cột Sidebar bên trái
+  .sidebar-col {
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
+
+    .sidebar-card {
+      padding: 1.5rem;
+    }
+
+    .profile-avatar {
+      width: 220px;
+      height: 220px;
+      border: 5px solid var(--background-body-tertiary);
+      outline: 2px solid var(--brand-social);
+      object-fit: cover;
+      box-shadow: 0 5px 25px rgba(139, 92, 246, 0.3);
+    }
+
+    .user-name {
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: var(--text-white);
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .resume-title-sidebar {
+      background: var(--text-title-managecv);
+      font-weight: 500;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .download-cv-btn {
+      width: 100%;
+      font-weight: 500;
+    }
+
+    hr {
+      border-color: var(--border-hero-right);
+      opacity: 0.3;
+      margin: 1.5rem 0;
+    }
+
+    .sidebar-heading {
+      font-weight: 600;
+      color: var(--text-white);
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+
+    .contact-info p {
+      color: var(--text-white);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .skills-info .skill-tag {
+      margin: 4px;
+      padding: 5px 12px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+
+    .language-text,
+    .simple-text {
+      color: var(--text-white);
+      p {
+        margin-bottom: 0.25rem;
+      }
+    }
+  }
+
+  // Cột nội dung bên phải
+  .main-content-col {
+    .content-card {
+      padding: 1rem 1.5rem 1.5rem 1.5rem;
+    }
+    .card-title-icon {
+      font-weight: 600;
+
+      margin-bottom: 1.5rem;
+      position: relative;
+      font-size: 1.5rem;
+      padding-left: 2rem;
+      font-size: 2rem; // tương đương 40px
+      background: var(--text-title-managecv);
+
+      /* Các thuộc tính để áp dụng gradient vào chữ */
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 30px;
+        background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+        border-radius: 3px;
+      }
+    }
+
+    .summary-text,
+    .experience-description,
+    .simple-text {
+      color: var(--text-white);
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 25px;
+      border-left: 3px solid var(--border-hero-right);
+
+      .timeline-item {
+        position: relative;
+        margin-bottom: 2.5rem;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .timeline-dot {
+          position: absolute;
+          left: -35px;
+          top: 5px;
+          width: 16px;
+          height: 16px;
+          background-color: var(--brand-social);
+          border-radius: 50%;
+          border: 4px solid var(--background-body-tertiary);
+        }
+
+        .experience-company {
+          font-weight: 600;
+          font-size: 1.2rem;
+
+          /* Đây là dải màu gradient giống hệt "Hello, SOS" */
+          background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+
+          /* Các thuộc tính để áp dụng gradient vào chữ */
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+
+        .experience-duration {
+          font-size: 0.9rem;
+          margin-bottom: 1rem;
+          color: var(--text-white);
+          opacity: 0.8;
+        }
+
+        .experience-description {
+          p {
+            position: relative;
+            padding-left: 20px;
+            &::before {
+              content: "-";
+              position: absolute;
+              left: 0;
+              color: var(--brand-social);
+              font-weight: bold;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // CSS cho màn hình di động
+  @media (max-width: 768px) {
+    .sidebar-col {
+      position: static;
+      margin-bottom: 2rem;
+    }
+
+    .main-content-col .card-title-icon {
+      font-size: 1.3rem;
+    }
+
+    .timeline {
+      padding-left: 20px;
+      .timeline-item .timeline-dot {
+        left: -32px;
+      }
+    }
+  }
+}

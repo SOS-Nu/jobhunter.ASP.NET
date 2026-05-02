@@ -1,0 +1,285 @@
+/* Cấu trúc layout chung của trang */
+.job-detail-page-container {
+  margin-top: 20px;
+}
+
+.bottom-pagination-container {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0;
+}
+
+/* Panel trái (danh sách job) */
+.left-panel-container {
+  .left-panel-header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-white-0);
+  }
+}
+
+/* Panel phải (chi tiết job) - Logic Sticky & Nested Scroll */
+.right-panel-container {
+  // 1. Vẫn giữ cho toàn bộ panel là sticky
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 90px);
+
+  // =======================================================
+  // THAY ĐỔI QUAN TRỌNG BẮT ĐẦU TỪ ĐÂY
+  // 2. Biến panel thành một flex container theo chiều dọc
+  display: flex;
+  flex-direction: column;
+
+  // 3. XÓA thanh cuộn khỏi chính panel này...
+  // overflow-y: auto; // Dòng này bị xóa hoặc ghi đè
+
+  // =======================================================
+
+  // Style chung
+  background-color: var(--background-body-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-hero-right);
+  padding: 1rem;
+  padding-right: 0rem;
+  padding-bottom: 0rem;
+}
+
+/* Header bên trong panel phải */
+.job-detail-header {
+  // Là một flex item, không co lại
+  flex-shrink: 0;
+
+  .company-details-bottom {
+    display: flex;
+    flex-direction: row; /* Quan trọng nhất */
+    align-items: center; /* Căn giữa cho đẹp */
+    gap: 1.5rem; /* Khoảng cách giữa 2 mục */
+    margin-top: 8px; /* Thêm khoảng cách với các mục ở trên */
+    margin-bottom: 8px;
+  }
+}
+
+/* Content bên trong panel phải */
+.job-detail-content {
+  // =======================================================
+  // THAY ĐỔI QUAN TRỌNG
+  // 4. ...và CHUYỂN thanh cuộn vào đây
+  overflow-y: auto;
+  padding-top: 1rem;
+
+  // 5. Yêu cầu nó giãn ra để chiếm hết không gian còn lại
+  flex-grow: 1;
+
+  // Kỹ thuật để đảm bảo overflow hoạt động tốt trong flexbox
+  min-height: 0;
+  /* --- Cho Firefox --- */
+  scrollbar-width: thin;
+  /* [Màu con trượt]      [Màu nền]        */
+  scrollbar-color: var(--border-hero-right) transparent;
+
+  /* --- Cho Chrome, Safari, Edge --- */
+  &::-webkit-scrollbar {
+    width: 8px; /* Độ rộng thanh cuộn */
+  }
+
+  /* Nền của thanh cuộn */
+  &::-webkit-scrollbar-track {
+    background: transparent; /* Trong suốt để hợp với theme */
+  }
+
+  /* Con trượt */
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--border-hero-right); /* Màu chủ đạo của web */
+    border-radius: 4px; /* Bo góc cho mềm mại */
+    border: 2px solid transparent; /* Tạo một khoảng đệm nhỏ quanh con trượt */
+    background-clip: content-box;
+  }
+
+  /* Con trượt khi di chuột vào */
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #a97af5; /* Màu sáng hơn một chút để tạo hiệu ứng */
+  }
+
+  /* ======================================================= */
+  // =======================================================
+
+  // Ẩn thanh cuộn cho đẹp
+  // scrollbar-width: none; // Firefox
+  // &::-webkit-scrollbar {
+  //   display: none; // Chrome, Safari
+  // }
+
+  // Các style chi tiết khác...
+  .skills,
+  .salary,
+  .quantity,
+  div {
+    margin-bottom: 0.25rem;
+    color: var(--text-gray);
+  }
+
+  strong {
+    color: var(--text-white);
+  }
+
+  .job-description {
+    p,
+    li,
+    span,
+    div {
+      word-break: break-word;
+      white-space: normal;
+      max-width: 100%;
+      color: var(--text-white);
+    }
+  }
+}
+
+// Placeholder khi chưa chọn job
+.empty-detail-placeholder {
+  position: sticky;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background-color: var(--background-body-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-hero-right);
+  color: var(--text-white) !important;
+
+  .empty-detail-placeholder-text .ant-empty-description {
+    color: var(--text-white); /* Đổi màu chữ */
+    font-size: 16px; /* Tăng kích thước chữ */
+    font-style: italic; /* In nghiêng chữ */
+    font-weight: 500; /* Tăng độ đậm của chữ */
+  }
+}
+
+// Style chi tiết cho header (lấy từ các phiên bản trước, không có logic mới)
+.job-detail-header {
+  padding-right: 1rem;
+  border-bottom: 1px solid var(--border-hero-right);
+  .company-info {
+    display: flex;
+
+    align-items: center;
+    gap: 1rem;
+
+    .company-logo {
+      width: 100px;
+      min-width: 100px;
+      height: 100px;
+      object-fit: contain;
+      border-radius: 8px;
+      background-color: white;
+      padding: 1px;
+    }
+  }
+
+  .btn-apply {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 12px 20px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    color: white;
+    background-image: var(--resize-button);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+  .btn-reapply {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 12px 20px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    color: white;
+    background-image: var(--linear-gradient-blue-purple);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.job-filter-container {
+  // Ghi đè màu nền nếu cần, Bootstrap 'bg-dark' đã khá tốt
+  // background-color: #2a2a3e;
+
+  .form-check-input {
+    // background-color: #cacad6;
+    // background-color: var(--form-check-label);
+
+    border-color: #5a5a78;
+
+    &:checked {
+      background-color: #a97af5; // Màu thương hiệu của bạn
+      border-color: #a97af5;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(169, 122, 245, 0.35);
+    }
+  }
+
+  .form-control {
+    // background-color: #212130;
+    color: var(--text-white);
+    border: 1px solid #444;
+    // &:focus {
+    //   background-color: #212130;
+    //   color: white;
+    //   border-color: #a97af5;
+    //   box-shadow: none;
+    // }
+  }
+
+  .input-group-text {
+    // background-color: #212130;
+    border: 1px solid #444;
+    color: #a97af5;
+    font-weight: bold;
+  }
+}
+
+[data-bs-theme="dark"] {
+  .job-info {
+    .header {
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+      /* Đây là dải màu gradient giống hệt "Hello, SOS" */
+      background: var(--text-title-managecv);
+
+      /* Các thuộc tính để áp dụng gradient vào chữ */
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+}
+
+[data-bs-theme="light"] {
+  .job-info {
+    .header {
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+      /* Đây là dải màu gradient giống hệt "Hello, SOS" */
+      color: black;
+    }
+  }
+}
