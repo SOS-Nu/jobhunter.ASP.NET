@@ -20,8 +20,16 @@ namespace jobhunter.ASP.NET.Controllers
 
         [HttpPost("resumes")]
         [ApiMessage("Create a resume")]
-        public async Task<IActionResult> Create([FromBody] Resume resume)
+        public async Task<IActionResult> Create([FromBody] ReqCreateResumeDTO dto)
         {
+            var resume = new Resume
+            {
+                Url = dto.Url,
+                Email = dto.Email,
+                CoverLetter = dto.CoverLetter,
+                JobId = dto.Job?.Id,
+                UserId = dto.User?.Id
+            };
             return StatusCode(201, await _resumeService.CreateAsync(resume));
         }
 

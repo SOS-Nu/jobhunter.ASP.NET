@@ -44,6 +44,7 @@ try
     {
         // camelCase for JSON output (matching Spring Boot Jackson default)
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
         // Store enums as string (agents.md rule 10)
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         //options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
@@ -64,6 +65,9 @@ try
     {
         options.SuppressModelStateInvalidFilter = true;
     });
+
+    builder.Services.AddSignalR();
+    builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, jobhunter.ASP.NET.Hubs.EmailUserIdProvider>();
 
     // ========================
     // SWAGGER / OPENAPI
@@ -109,6 +113,7 @@ try
     builder.Services.AddScoped<IChatService, ChatService>();
     builder.Services.AddScoped<IFileService, FileService>();
     builder.Services.AddScoped<IEmailService, EmailService>();
+    builder.Services.AddScoped<IOtpService, OtpService>();
     builder.Services.AddScoped<ISubscriberService, SubscriberService>();
     builder.Services.AddScoped<IOnlineResumeService, OnlineResumeService>();
     builder.Services.AddScoped<IPermissionService, PermissionService>();
@@ -194,7 +199,9 @@ try
     }
 
     Log.Information("Starting jobhunter.ASP.NET application...");
-    app.Run();
+    app.MapHub<jobhunter.ASP.NET.Hubs.ChatHub>("/ws");
+
+app.Run();
 }
 catch (Exception ex)
 {

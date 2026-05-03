@@ -54,6 +54,7 @@ TemporaryDependencyNodeTargetIdentifier=net8.0
 
 [sourceFiles]
 Configuration/
+ ApplicationSieveProcessor.cs
  CorsConfiguration.cs
  JwtConfiguration.cs
 Controllers/
@@ -61,15 +62,19 @@ Controllers/
  ChatController.cs
  CommentController.cs
  CompanyController.cs
+ DashboardController.cs
  EmailController.cs
  FileController.cs
  JobController.cs
  OnlineResumeController.cs
+ PaymentController.cs
  PermissionController.cs
  ResumeController.cs
  RoleController.cs
+ SkillController.cs
  SubscriberController.cs
  UserController.cs
+ WorkExperienceController.cs
 Data/
  AppDbContext.cs
  DataSeeder.cs
@@ -102,6 +107,10 @@ Enums/
 Filters/
  FormatRestResponseFilter.cs
  PermissionActionFilter.cs
+ ValidateModelFilter.cs
+Hubs/
+ ChatHub.cs
+ EmailUserIdProvider.cs
 Mappings/MappingProfile.cs
 Middleware/GlobalExceptionMiddleware.cs
 Migrations/
@@ -121,15 +130,20 @@ Services/
  CommentService.cs
  CompanyService.cs
  CurrentUserService.cs
+ DashboardService.cs
  EmailService.cs
  FileService.cs
  JobService.cs
  OnlineResumeService.cs
+ OtpService.cs
+ PaymentService.cs
  PermissionService.cs
  ResumeService.cs
  RoleService.cs
+ SkillService.cs
  SubscriberService.cs
  UserService.cs
+ WorkExperienceService.cs
 Validators/RequestValidators.cs
 
 [metadataReferences]
@@ -471,6 +485,7 @@ Validators/RequestValidators.cs
  serilog.sinks.debug/2.0.0/lib/netstandard2.1/Serilog.Sinks.Debug.dll
  serilog.sinks.file/5.0.0/lib/net5.0/Serilog.Sinks.File.dll
  serilog/3.1.1/lib/net7.0/Serilog.dll
+ sieve/2.5.5/lib/netstandard2.1/Sieve.dll
  swashbuckle.aspnetcore.swagger/6.6.2/lib/net8.0/Swashbuckle.AspNetCore.Swagger.dll
  swashbuckle.aspnetcore.swaggergen/6.6.2/lib/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
  swashbuckle.aspnetcore.swaggerui/6.6.2/lib/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll

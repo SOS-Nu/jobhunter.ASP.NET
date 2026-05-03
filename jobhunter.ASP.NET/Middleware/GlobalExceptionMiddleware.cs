@@ -93,9 +93,10 @@ namespace jobhunter.ASP.NET.Middleware
 
             var jsonOptions = new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             };
-
             var json = JsonSerializer.Serialize(response, jsonOptions);
             await context.Response.WriteAsync(json);
         }

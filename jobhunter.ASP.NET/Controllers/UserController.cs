@@ -94,7 +94,28 @@ namespace jobhunter.ASP.NET.Controllers
         public async Task<IActionResult> UpdateIsPublic([FromBody] ReqUpdateIsPublicDTO dto)
         {
             await _userService.UpdateUserIsPublicAsync(dto.Public);
-            return Ok();
+            return Ok(null);
+        }
+
+        [HttpGet("users/detail/{id}")]
+        [ApiMessage("Lấy chi tiết thông tin user theo ID")]
+        public async Task<IActionResult> GetUserDetailById(long id)
+        {
+            return Ok(await _userService.FetchUserDetailByIdAsync(id));
+        }
+
+        [HttpGet("users/detail")]
+        [ApiMessage("Lấy danh sách chi tiết người dùng với phân trang và bộ lọc")]
+        public async Task<IActionResult> GetAllUserDetails([FromQuery] SieveModel sieveModel)
+        {
+            return Ok(await _userService.FetchAllUserDetailsAsync(sieveModel));
+        }
+
+        [HttpPost("users/main-resume")]
+        [ApiMessage("Upload main resume for user")]
+        public async Task<IActionResult> UploadMainResume(IFormFile file)
+        {
+            return Ok(await _userService.UploadMainResumeAsync(file));
         }
     }
 }

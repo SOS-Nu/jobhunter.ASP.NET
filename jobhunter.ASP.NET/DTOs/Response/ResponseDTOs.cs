@@ -139,6 +139,22 @@ namespace jobhunter.ASP.NET.DTOs.Response
         public ResLastMessageDTO? LastMessage { get; set; }
     }
 
+    public class ResUserDetailDTO
+    {
+        public long Id { get; set; }
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public int Age { get; set; }
+        public GenderEnum? Gender { get; set; }
+        public string? Address { get; set; }
+        public string? MainResume { get; set; }
+        public bool Public { get; set; }
+        public string? Avatar { get; set; }
+
+        public ResOnlineResumeDTO? OnlineResume { get; set; }
+        public List<ResWorkExperienceDTO>? WorkExperiences { get; set; }
+    }
+
     // ========================
     // COMPANY RESPONSE DTOs
     // ========================
@@ -179,7 +195,7 @@ namespace jobhunter.ASP.NET.DTOs.Response
         public HrCompanyDTO? HrCompany { get; set; }
         public double AverageRating { get; set; }
         public long TotalComments { get; set; }
-        public bool IsComment { get; set; }
+        public bool Comment { get; set; }
     }
 
     public class HrCompanyDTO
@@ -244,6 +260,7 @@ namespace jobhunter.ASP.NET.DTOs.Response
         public DateTime? UpdatedAt { get; set; }
         public string? CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("applied")]
         public bool IsApplied { get; set; }
         public CompanyInfoDTO? Company { get; set; }
         public List<SkillInfoDTO>? Skills { get; set; }

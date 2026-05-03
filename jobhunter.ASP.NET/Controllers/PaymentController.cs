@@ -19,7 +19,7 @@ namespace jobhunter.ASP.NET.Controllers
         }
 
         [HttpPost("payment/vnpay/create")]
-        [ApiMessage("Create VNPay payment URL")]
+        [ApiMessage("Create Vnpay URL")]
         public async Task<IActionResult> CreatePaymentUrl()
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";

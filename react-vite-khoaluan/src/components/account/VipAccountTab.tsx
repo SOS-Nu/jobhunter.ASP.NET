@@ -56,7 +56,7 @@ const VipAccountTab = () => {
     setIsCreatingUrl(true);
     try {
       const res = await callCreateVipPaymentUrl();
-      const paymentUrl = res?.data?.data?.url;
+      const paymentUrl = res?.data?.url;
 
       if (paymentUrl) {
         window.location.href = paymentUrl;

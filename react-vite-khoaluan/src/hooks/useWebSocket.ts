@@ -3,15 +3,15 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { addMessage } from "@/redux/slice/chatSlice";
-import { useUsersConnected } from "./useUsersConnected"; // Giả sử bạn có hook này
-import { UserInfo } from "@/types/backend"; // Giả sử bạn có type này
+import { useUsersConnected } from "./useUsersConnected";
+import { UserInfo } from "@/types/backend";
 import { toast } from "react-toastify";
-import SockJS from "sockjs-client";
-import { Stomp } from "@stomp/stompjs";
-import { formatDate } from "@/utils/formatDate"; // Import từ file mới
+import * as signalR from "@microsoft/signalr";
+import { formatDate } from "@/utils/formatDate";
 
 export const useWebSocket = () => {
-  const stompClientRef = useRef<any>(null);
+  const signalRConnectionRef = useRef<signalR.HubConnection | null>(null);
+  const stompWrapperRef = useRef<any>(null);
   const hasDisconnectedRef = useRef(false);
 
   const dispatch = useAppDispatch();
@@ -37,8 +37,7 @@ export const useWebSocket = () => {
     connectedUsersRef.current = connectedUsers;
   }, [activeChatUserId, connectedUsers]);
 
-  const onUserStatusChange = useCallback((payload: { body: string }) => {
-    const updatedUser = JSON.parse(payload.body);
+  const onUserStatusChange = useCallback((updatedUser: any) => {
     setConnectedUsers((prevUsers) =>
       prevUsers.map((u) =>
         u.email === updatedUser.email ? { ...u, status: updatedUser.status } : u
@@ -48,33 +47,65 @@ export const useWebSocket = () => {
 
   const handleDisconnect = useCallback(() => {
     if (
-      stompClientRef.current?.connected &&
+      signalRConnectionRef.current?.state === signalR.HubConnectionState.Connected &&
       user?.email &&
       !hasDisconnectedRef.current
     ) {
       hasDisconnectedRef.current = true;
-      stompClientRef.current.send(
-        "/app/user.disconnectUser",
-        {},
-        JSON.stringify({
-          id: user.id,
-          email: user.email,
-          status: "OFFLINE",
-        })
-      );
-      stompClientRef.current.disconnect(() => {
-        // console.log("Disconnected from WebSocket.");
+      signalRConnectionRef.current.invoke("DisconnectUser", {
+        id: user.id,
+        email: user.email,
+        status: "OFFLINE",
       });
-      stompClientRef.current = null;
+      signalRConnectionRef.current.stop();
+      signalRConnectionRef.current = null;
     }
   }, [user]);
 
-  // Main WebSocket Connection Effect
   useEffect(() => {
     if (!user?.email) return;
 
-    const onMessageReceived = (payload: { body: string }) => {
-      const notification = JSON.parse(payload.body);
+    if (signalRConnectionRef.current) {
+      return;
+    }
+
+    const token = window.localStorage.getItem("access_token") || "";
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${import.meta.env.VITE_BACKEND_URL}/ws`, {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    signalRConnectionRef.current = connection;
+    hasDisconnectedRef.current = false;
+
+    // Fake stomp client for compatibility with ChatPage.tsx
+    stompWrapperRef.current = {
+      send: (destination: string, headers: any, body: string) => {
+        const payload = JSON.parse(body);
+        if (destination === "/app/chat") {
+            connection.invoke("SendMessage", payload);
+        } else if (destination === "/app/user.disconnectUser") {
+            connection.invoke("DisconnectUser", payload);
+        } else if (destination === "/app/user.addUser") {
+            connection.invoke("AddUser", payload);
+        }
+      }
+    };
+
+    connection.on("UserConnected", (u) => {
+        u.status = "ONLINE";
+        onUserStatusChange(u);
+    });
+
+    connection.on("UserDisconnected", (u) => {
+        u.status = "OFFLINE";
+        onUserStatusChange(u);
+    });
+
+    connection.on("ReceiveMessage", (notification) => {
       const { senderId, content, timeStamp } = notification;
 
       setConnectedUsers((prevUsers) =>
@@ -104,56 +135,28 @@ export const useWebSocket = () => {
         const newMessage = {
           type: "receiver",
           content: content,
-          time: formatDate(new Date(timeStamp)), // Dùng hàm đã import
+          time: formatDate(new Date(timeStamp)),
         };
         dispatch(addMessage(newMessage));
       }
-    };
-
-    if (stompClientRef.current) {
-      return;
-    }
-
-    hasDisconnectedRef.current = false;
-    const socket = new SockJS(`${import.meta.env.VITE_BACKEND_URL}/ws`);
-    const client = Stomp.over(socket);
-    stompClientRef.current = client;
-
-    client.debug = () => {};
-
-    client.connect({}, () => {
-      client.subscribe(`/user/${user.email}/queue/messages`, onMessageReceived);
-      client.subscribe("/topic/public", onUserStatusChange);
-      client.send(
-        "/app/user.addUser",
-        {},
-        JSON.stringify({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          company: user.company,
-          status: "ONLINE",
-        })
-      );
-
-      const heartbeatInterval = setInterval(() => {
-        if (stompClientRef.current?.connected) {
-          stompClientRef.current.send(
-            "/app/heartbeat.ping",
-            {},
-            JSON.stringify({ email: user.email })
-          );
-        }
-      }, 3000);
     });
+
+    connection.start().then(() => {
+        connection.invoke("AddUser", {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+            company: user.company,
+            status: "ONLINE"
+        });
+    }).catch(err => console.error("SignalR Connection Error: ", err));
 
     return () => {
       handleDisconnect();
     };
   }, [user, dispatch, onUserStatusChange, handleDisconnect]);
 
-  // Effect xử lý sự kiện đóng tab/trình duyệt
   useEffect(() => {
     window.addEventListener("beforeunload", handleDisconnect);
     return () => {
@@ -161,6 +164,5 @@ export const useWebSocket = () => {
     };
   }, [handleDisconnect]);
 
-  // Trả về client để component có thể dùng cho Context
-  return { stompClient: stompClientRef.current };
+  return { stompClient: stompWrapperRef.current };
 };

@@ -14,7 +14,7 @@ const BecomeVipRecruiter = () => {
     setIsCreatingUrl(true);
     try {
       const res = await callCreateVipPaymentUrl();
-      const paymentUrl = res?.data?.data?.url;
+      const paymentUrl = res?.data?.url;
       if (paymentUrl) {
         // >>> THÊM DÒNG NÀY <<<
         // Lưu lại "nguồn" của hành động thanh toán

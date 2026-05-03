@@ -63,6 +63,7 @@ const RegisterPage = () => {
       notification.error({
         message: "Có lỗi xảy ra",
         description:
+          (Array.isArray(error?.message) ? error?.message[0] : error?.message) ||
           error?.response?.data?.message ||
           "Không thể gửi OTP, vui lòng thử lại.",
       });
@@ -110,6 +111,7 @@ const RegisterPage = () => {
       notification.error({
         message: "Có lỗi xảy ra",
         description:
+          (Array.isArray(error?.message) ? error?.message[0] : error?.message) ||
           error?.response?.data?.message ||
           "Đăng ký thất bại, vui lòng thử lại.",
       });

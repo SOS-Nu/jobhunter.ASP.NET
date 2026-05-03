@@ -20,6 +20,8 @@ namespace jobhunter.ASP.NET.Services
         Task<User?> UpdateOwnUserAsync(User reqUser);
         Task DeleteUserAsync(long id);
         Task<PaginatedResponse<ResUserDTO>> GetAllUsersAsync(SieveModel sieveModel);
+        Task<ResUserDetailDTO> FetchUserDetailByIdAsync(long id);
+        Task<PaginatedResponse<ResUserDetailDTO>> FetchAllUserDetailsAsync(SieveModel sieveModel);
         Task<UserSession> CreateSessionAsync(User user, string jti, DateTime expiresAt);
         Task<UserSession?> FindSessionByJtiAsync(string jti);
         Task DeleteSessionByJtiAsync(string jti);
@@ -230,6 +232,65 @@ namespace jobhunter.ASP.NET.Services
             var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResUserDTO>
+            {
+                Meta = new PaginationMeta
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    Pages = (int)Math.Ceiling((double)total / pageSize),
+                    Total = total
+                },
+                Result = dtos
+            };
+        }
+
+        public async Task<ResUserDetailDTO> FetchUserDetailByIdAsync(long id)
+        {
+            var user = await _context.Users
+                .Include(u => u.OnlineResume)
+                    .ThenInclude(or => or!.Skills)
+                .Include(u => u.WorkExperiences)
+                .FirstOrDefaultAsync(u => u.Id == id)
+                ?? throw new IdInvalidException($"User với id = {id} không tồn tại");
+
+            var dto = _mapper.Map<ResUserDetailDTO>(user);
+            if (!user.IsPublic && dto.OnlineResume != null)
+            {
+                dto.OnlineResume.Email = null;
+                dto.OnlineResume.Phone = null;
+                dto.OnlineResume.Address = null;
+            }
+            return dto;
+        }
+
+        public async Task<PaginatedResponse<ResUserDetailDTO>> FetchAllUserDetailsAsync(SieveModel sieveModel)
+        {
+            var query = _context.Users
+                .Include(u => u.OnlineResume)
+                    .ThenInclude(or => or!.Skills)
+                .Include(u => u.WorkExperiences)
+                .AsQueryable();
+
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
+            var total = await query.CountAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
+
+            var dtos = _mapper.Map<List<ResUserDetailDTO>>(items);
+            foreach (var dto in dtos)
+            {
+                var user = items.First(u => u.Id == dto.Id);
+                if (!user.IsPublic && dto.OnlineResume != null)
+                {
+                    dto.OnlineResume.Email = null;
+                    dto.OnlineResume.Phone = null;
+                    dto.OnlineResume.Address = null;
+                }
+            }
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
+            return new PaginatedResponse<ResUserDetailDTO>
             {
                 Meta = new PaginationMeta
                 {

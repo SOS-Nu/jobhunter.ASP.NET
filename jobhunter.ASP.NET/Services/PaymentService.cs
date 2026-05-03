@@ -56,12 +56,18 @@ namespace jobhunter.ASP.NET.Services
         {
             var user = await GetCurrentUserAsync();
 
-            var vnpTmnCode = _configuration["VNPay:TmnCode"]!;
-            var vnpHashSecret = _configuration["VNPay:HashSecret"]!;
-            var vnpPaymentUrl = _configuration["VNPay:Url"]!;
-            var vnpReturnUrl = _configuration["VNPay:ReturnUrl"]!;
+            var vnpTmnCode = _configuration["VNPay:TmnCode"] ?? "";
+            var vnpHashSecret = _configuration["VNPay:HashSecret"] ?? "";
+            var vnpPaymentUrl = _configuration["VNPay:Url"] ?? "";
+            var vnpReturnUrl = _configuration["VNPay:ReturnUrl"] ?? "";
             var vnpVersion = _configuration["VNPay:Version"] ?? "2.1.0";
             var vnpCommand = _configuration["VNPay:Command"] ?? "pay";
+
+            if (string.IsNullOrEmpty(vnpTmnCode) || string.IsNullOrEmpty(vnpHashSecret) || string.IsNullOrEmpty(vnpPaymentUrl))
+            {
+                _logger.LogError("VNPay configuration is incomplete. TmnCode, HashSecret, or Url is missing.");
+                throw new IdInvalidException("Cấu hình VNPay không hợp lệ. Vui lòng liên hệ quản trị viên.");
+            }
 
             var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             long amount = 50000 * 100; // 50,000 VND * 100 (VNPay requires amount * 100)
@@ -90,6 +96,7 @@ namespace jobhunter.ASP.NET.Services
             vnpParams["vnp_SecureHash"] = secureHash;
 
             var paymentUrl = vnpPaymentUrl + "?" + BuildQueryString(vnpParams);
+            _logger.LogInformation("VNPay URL generated successfully for user {Email}, length={Length}", user.Email, paymentUrl.Length);
             return new ResPaymentUrlDTO { Url = paymentUrl };
         }
 

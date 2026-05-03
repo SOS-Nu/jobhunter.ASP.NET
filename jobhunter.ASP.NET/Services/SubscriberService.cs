@@ -8,8 +8,8 @@ namespace jobhunter.ASP.NET.Services
     public interface ISubscriberService
     {
         Task<bool> IsExistsByEmailAsync(string email);
-        Task<Subscriber> CreateAsync(Subscriber subs);
-        Task<Subscriber> UpdateAsync(Subscriber subsDB, Subscriber subsRequest);
+        Task<Subscriber> CreateAsync(Subscriber subs, List<long>? skillIds);
+        Task<Subscriber> UpdateAsync(Subscriber subsDB, List<long>? skillIds);
         Task<Subscriber?> FindByIdAsync(long id);
         Task<Subscriber?> FindByEmailAsync(string email);
         Task SendSubscribersEmailJobsAsync();
@@ -31,12 +31,11 @@ namespace jobhunter.ASP.NET.Services
             return await _context.Subscribers.AnyAsync(s => s.Email == email);
         }
 
-        public async Task<Subscriber> CreateAsync(Subscriber subs)
+        public async Task<Subscriber> CreateAsync(Subscriber subs, List<long>? skillIds)
         {
-            if (subs.Skills != null && subs.Skills.Any())
+            if (skillIds != null && skillIds.Any())
             {
-                var reqSkills = subs.Skills.Select(s => s.Id).ToList();
-                var dbSkills = await _context.Skills.Where(s => reqSkills.Contains(s.Id)).ToListAsync();
+                var dbSkills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
                 subs.Skills = dbSkills;
             }
 
@@ -45,12 +44,11 @@ namespace jobhunter.ASP.NET.Services
             return subs;
         }
 
-        public async Task<Subscriber> UpdateAsync(Subscriber subsDB, Subscriber subsRequest)
+        public async Task<Subscriber> UpdateAsync(Subscriber subsDB, List<long>? skillIds)
         {
-            if (subsRequest.Skills != null)
+            if (skillIds != null)
             {
-                var reqSkills = subsRequest.Skills.Select(s => s.Id).ToList();
-                var dbSkills = await _context.Skills.Where(s => reqSkills.Contains(s.Id)).ToListAsync();
+                var dbSkills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
                 
                 // Clear existing and add new
                 subsDB.Skills.Clear();

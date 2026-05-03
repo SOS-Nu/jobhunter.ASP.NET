@@ -132,14 +132,7 @@ instance.interceptors.response.use(
           return instance(originalRequest); // Retry request GỐC
         }
 
-        // Logic 400 (ví dụ: Không có cookie) -> Đợi 1s và thử lại
-        if (+refreshStatus === 400) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          delete originalRequest.headers[NO_RETRY_HEADER];
-          return instance(originalRequest); // Retry request GỐC
-        }
-
-        // Tất cả các lỗi KHÁC từ /refresh (401, 500,...) -> Đăng xuất
+        // Tất cả các lỗi KHÁC từ /refresh (401, 400, 500,...) -> Đăng xuất
         handleLogout(message); // <<< VỊ TRÍ LOGOUT 3 (Quan trọng nhất)
         return Promise.reject(refreshError.response?.data ?? refreshError);
       }

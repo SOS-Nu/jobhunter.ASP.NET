@@ -12,6 +12,11 @@ namespace jobhunter.ASP.NET.DTOs.Request
         public string Password { get; set; } = null!;
     }
 
+    public class ReqGoogleLoginDTO
+    {
+        public string Credential { get; set; } = null!;
+    }
+
     public class ReqUserRegisterDTO
     {
         public string Name { get; set; } = null!;
@@ -302,6 +307,26 @@ namespace jobhunter.ASP.NET.DTOs.Request
     {
         public long Id { get; set; }
         public string Status { get; set; } = null!;
+    }
+
+    // ========================
+    // SUBSCRIBER DTOs
+    // ========================
+    public class ReqCreateSubscriberDTO
+    {
+        [Required(ErrorMessage = "email không được để trống")]
+        public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "name không được để trống")]
+        public string Name { get; set; } = null!;
+
+        public List<SkillRef>? Skills { get; set; }
+    }
+
+    public class ReqUpdateSubscriberDTO
+    {
+        public long Id { get; set; }
+        public List<SkillRef>? Skills { get; set; }
     }
 
     // ========================

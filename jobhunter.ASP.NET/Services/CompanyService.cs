@@ -121,7 +121,7 @@ namespace jobhunter.ASP.NET.Services
                         .Include(r => r.Job)
                         .AnyAsync(r => r.UserId == user.Id && r.Job != null && r.Job.CompanyId == id && r.Status == Enums.ResumeStateEnum.APPROVED);
                     bool hasCommented = await _context.Comments.AnyAsync(c => c.UserId == user.Id && c.CompanyId == id);
-                    dto.IsComment = hasApprovedResume && !hasCommented;
+                    dto.Comment = hasApprovedResume && !hasCommented;
                 }
             }
 

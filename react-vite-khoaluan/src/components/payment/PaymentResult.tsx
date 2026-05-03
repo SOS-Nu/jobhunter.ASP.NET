@@ -58,6 +58,7 @@ const PaymentResult = () => {
       } catch (error: any) {
         setPaymentStatus("error");
         setMessage(
+          error?.message ||
           error?.response?.data?.message ||
             "Có lỗi xảy ra khi xác thực thanh toán."
         );

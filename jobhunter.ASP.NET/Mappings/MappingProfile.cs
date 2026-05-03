@@ -37,6 +37,12 @@ namespace jobhunter.ASP.NET.Mappings
                 .ForMember(d => d.Role, opt => opt.MapFrom(s =>
                     s.Role != null ? new RoleShortDTO { Id = s.Role.Id, Name = s.Role.Name } : null));
 
+            // User -> ResUserDetailDTO
+            CreateMap<User, ResUserDetailDTO>()
+                .ForMember(d => d.Public, opt => opt.MapFrom(s => s.IsPublic))
+                .ForMember(d => d.Email, opt => opt.MapFrom(s => s.IsPublic ? s.Email : null))
+                .ForMember(d => d.Address, opt => opt.MapFrom(s => s.IsPublic ? s.Address : null));
+
             // User -> UserLoginDTO (for auth responses)
             CreateMap<User, UserLoginDTO>()
                 .ForMember(d => d.Vip, opt => opt.MapFrom(s => s.IsVip))
@@ -86,6 +92,7 @@ namespace jobhunter.ASP.NET.Mappings
 
             // Company -> ResFetchCompanyDTO
             CreateMap<Company, ResFetchCompanyDTO>();
+
 
             // ReqCreateJobDTO -> Job (for admin job creation)
             CreateMap<DTOs.Request.ReqCreateJobDTO, Job>()

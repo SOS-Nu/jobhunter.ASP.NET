@@ -18,6 +18,7 @@ namespace jobhunter.ASP.NET.Controllers
         }
 
         [HttpGet("dashboard")]
+        [AllowAnonymous]
         [ApiMessage("Fetch dashboard statistics")]
         public async Task<IActionResult> GetDashboard()
         {
