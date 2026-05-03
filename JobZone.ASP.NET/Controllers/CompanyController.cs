@@ -1,0 +1,90 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using JobZone.ASP.NET.DTOs.Request;
+using JobZone.ASP.NET.DTOs.Response;
+using JobZone.ASP.NET.Entities;
+using JobZone.ASP.NET.Filters;
+using JobZone.ASP.NET.Middleware;
+using JobZone.ASP.NET.Services;
+
+namespace JobZone.ASP.NET.Controllers
+{
+    [Route("api/v1")]
+    [ApiController]
+    [Authorize]
+    public class CompanyController : ControllerBase
+    {
+        private readonly ICompanyService _companyService;
+        private readonly IMapper _mapper;
+
+        public CompanyController(ICompanyService companyService, IMapper mapper)
+        {
+            _companyService = companyService; _mapper = mapper;
+        }
+
+        [HttpPost("companies")]
+        [ApiMessage("Create a company by admin")]
+        public async Task<IActionResult> Create([FromBody] Company company)
+        {
+            var created = await _companyService.CreateCompanyAsync(company);
+            return StatusCode(201, created);
+        }
+
+        [HttpGet("companies")]
+        [AllowAnonymous]
+        [ApiMessage("Fetch all Companies")]
+        public async Task<IActionResult> GetAll([FromQuery] Sieve.Models.SieveModel sieveModel)
+        {
+            return Ok(await _companyService.GetAllCompaniesAsync(sieveModel));
+        }
+
+        [HttpPut("companies")]
+        [ApiMessage("Update a company by admin")]
+        public async Task<IActionResult> Update([FromBody] Company company)
+        {
+            var updated = await _companyService.UpdateCompanyAsync(company);
+            return Ok(updated);
+        }
+
+        [HttpDelete("companies/{id}")]
+        [ApiMessage("Delete a company by admin")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            await _companyService.DeleteCompanyAsync(id);
+            return Ok(null);
+        }
+
+        [HttpGet("companies/{id}")]
+        [AllowAnonymous]
+        [ApiMessage("Fetch company by id")]
+        public async Task<IActionResult> GetById(long id)
+        {
+            var dto = await _companyService.GetCompanyByIdAsync(id)
+                ?? throw new IdInvalidException($"Không tìm thấy công ty với id {id}");
+            return Ok(dto);
+        }
+
+        [HttpPost("companies/by-user")]
+        [ApiMessage("Create a company for the current user")]
+        public async Task<IActionResult> CreateByUser([FromBody] ReqCreateCompanyDTO req)
+        {
+            return StatusCode(201, await _companyService.CreateCompanyByUserAsync(req));
+        }
+
+        [HttpPut("companies/by-user")]
+        [ApiMessage("Update a company that user created")]
+        public async Task<IActionResult> UpdateByUser([FromBody] ReqUpdateCompanyDTO req)
+        {
+            return Ok(await _companyService.UpdateCompanyByUserAsync(req));
+        }
+
+        [HttpDelete("companies/by-user")]
+        [ApiMessage("Delete a company that user created")]
+        public async Task<IActionResult> DeleteByUser()
+        {
+            await _companyService.DeleteCompanyByUserAsync();
+            return Ok(null);
+        }
+    }
+}
