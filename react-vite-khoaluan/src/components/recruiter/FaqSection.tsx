@@ -1,6 +1,5 @@
 // src/components/recruiter/FaqSection.tsx
 
-import React from "react";
 import { Accordion } from "react-bootstrap";
 
 const FaqSection = () => {
@@ -19,7 +18,7 @@ const FaqSection = () => {
       question:
         "Hồ sơ công ty và tin tuyển dụng của tôi có được bảo mật không?",
       answer:
-        "Chúng tôi cam kết bảo mật tuyệt đối mọi thông tin của bạn. Dữ liệu của bạn sẽ được mã hóa và chỉ được sử dụng cho mục đích tuyển dụng trên nền tảng JobHunter.",
+        "Chúng tôi cam kết bảo mật tuyệt đối mọi thông tin của bạn. Dữ liệu của bạn sẽ được mã hóa và chỉ được sử dụng cho mục đích tuyển dụng trên nền tảng JobZone.",
     },
   ];
 

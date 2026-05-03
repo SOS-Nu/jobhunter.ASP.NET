@@ -38,7 +38,7 @@
     "outputCulture": "Phù hợp văn hóa"
   },
   "appHeader": {
-    "brand": "JobHunter",
+    "brand": "JobZone",
     "home": "Trang chủ",
     "findjobs": "Tìm việc làm",
     "company": "Tìm công ty",
@@ -112,7 +112,7 @@
       "googlePlay": "Google Play",
       "appStore": "App Store"
     },
-    "copyright": "JobHunter Cơ hội việc làm, chỉ một cú click! © President SOS Nu {{year}}. Đã đăng ký bản quyền."
+    "copyright": "JobZone Cơ hội việc làm, chỉ một cú click! © President SOS Nu {{year}}. Đã đăng ký bản quyền."
   },
   "heroSection": {
     "exp": "Kinh nghiệm",

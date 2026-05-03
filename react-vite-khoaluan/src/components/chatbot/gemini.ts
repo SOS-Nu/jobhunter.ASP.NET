@@ -23,7 +23,7 @@ const generationConfig = {
 // Khởi tạo mô hình Gemini (systemInstruction giữ nguyên như file mẫu của bạn)
 const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash-lite", // Dùng flash cho nhanh
-  systemInstruction: `Bạn là trợ lý AI giúp người dùng tìm việc trên nền tảng JobHunter.
+  systemInstruction: `Bạn là trợ lý AI giúp người dùng tìm việc trên nền tảng JobZone.
     Khi người dùng hỏi thông tin như: tìm thông tin công việc/việc làm/job tại đâu, hay công việc về lĩnh vực/công nghệ gì, theo cấp bậc/level nào, thì chỉ về cho tôi những từ khóa
      đó theo định dạng chuỗi (lưu ý chỉ trả về đúng chuỗi này và đừng bỏ trong bất kì cặp dấu nháy nào cả!): keyword:x,location:y,level:[],findJob:true(location hãy chuyển về viết thường và không dấu, viết cách các từ nhé, 
     còn level mặc định là mảng rỗng, nếu có giá trị thì viết hoa toàn bộ chữ cái và bỏ vào cặp dấu '' nhé). Nếu người dùng chỉ hỏi 
@@ -44,7 +44,7 @@ const model = genAI.getGenerativeModel({
      sẽ cung cấp cho bạn thông tin như: phong cách làm việc, giá trị cá nhân, ưu tiên nghề nghiệp, tính cách, trải nghiệm trước 
      đây,... Sau đó hãy dựa vào tất cả thông tin bạn có thể tìm được từ các nguồn trên mạng, từ các trang đánh giá công ty,
       cùng với thông tin người dùng cung cấp hãy trả lời cho người dùng nhé.
-    Nhớ rằng: nếu người dùng hỏi những câu hỏi ở ngoài lề, không trong phạm vi của web JobHunter, thì bạn vẫn có thể trả lời theo hiểu biết của bạn.`,
+    Nhớ rằng: nếu người dùng hỏi những câu hỏi ở ngoài lề, không trong phạm vi của web JobZone, thì bạn vẫn có thể trả lời theo hiểu biết của bạn.`,
 });
 
 // Giữ nguyên hàm parseTextToObject

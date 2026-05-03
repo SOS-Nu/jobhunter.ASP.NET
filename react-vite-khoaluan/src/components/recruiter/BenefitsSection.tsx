@@ -1,8 +1,7 @@
 // src/components/recruiter/BenefitsSection.tsx
 
-import React from "react";
-import { Row, Col, Card } from "react-bootstrap";
-import { FaUsers, FaClipboardList, FaBrain } from "react-icons/fa"; // Ví dụ các icon
+import { Card, Col, Row } from "react-bootstrap";
+import { FaBrain, FaClipboardList, FaUsers } from "react-icons/fa"; // Ví dụ các icon
 
 const BenefitsSection = () => {
   const benefits = [
@@ -25,7 +24,7 @@ const BenefitsSection = () => {
 
   return (
     <div className="my-5 py-5 rounded">
-      <h2 className="text-center mb-5">Tại Sao Chọn JobHunter?</h2>
+      <h2 className="text-center mb-5">Tại Sao Chọn JobZone?</h2>
       <Row className="px-3">
         {benefits.map((benefit, index) => (
           <Col md={4} key={index} className="mb-4">

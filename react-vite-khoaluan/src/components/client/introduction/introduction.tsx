@@ -1,24 +1,24 @@
 // @/components/client/introduction/introduction.tsx (Đã tối ưu)
-import { Container, Row, Col, Spinner } from "react-bootstrap";
-import { useCurrentApp } from "components/context/app.context";
-import { isMobile } from "react-device-detect";
-import styles from "styles/client.module.scss";
-import SimpleGlowCard from "components/share/glowcard/simple.glow-card";
-import { Bar } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
   BarElement,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
   Tooltip,
-  Legend,
 } from "chart.js";
+import { useCurrentApp } from "components/context/app.context";
+import SimpleGlowCard from "components/share/glowcard/simple.glow-card";
+import { Col, Container, Row, Spinner } from "react-bootstrap";
+import { Bar } from "react-chartjs-2";
 import CountUp from "react-countup";
+import { isMobile } from "react-device-detect";
+import styles from "styles/client.module.scss";
 // Sửa import: Thêm useMemo
-import { useState, useEffect, useRef, useMemo } from "react";
-import { IDashboardData } from "@/types/backend";
 import { callGetDashboard } from "@/config/api";
+import { IDashboardData } from "@/types/backend";
 import { t } from "i18next"; // Đảm bảo t được import (nếu dùng i18n)
+import { useEffect, useMemo, useRef, useState } from "react";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -28,7 +28,7 @@ const Introduction = () => {
   const chartRef = useRef<HTMLDivElement>(null);
 
   const [dashboardData, setDashboardData] = useState<IDashboardData | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,7 +58,7 @@ const Introduction = () => {
             observer.disconnect();
           }
         },
-        { threshold: 0.2 }
+        { threshold: 0.2 },
       );
       observer.observe(chartRef.current);
 
@@ -195,7 +195,7 @@ const Introduction = () => {
                 marginBottom: "1rem",
               }}
             >
-              Về <span className="brand-red">JobHunter </span>
+              Về <span className="brand-red">JobZone </span>
             </h2>
             <p
               style={{
@@ -204,7 +204,7 @@ const Introduction = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              <span className="brand-red">JobHunter</span>
+              <span className="brand-red">JobZone</span>
               {""} {t("introduction.title")}
             </p>
             <Row className="g-3">

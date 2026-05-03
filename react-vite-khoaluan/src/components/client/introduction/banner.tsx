@@ -1,11 +1,11 @@
-import { Button, Container, Row, Col } from "react-bootstrap";
+import { CONTACT_LOTTIE } from "@/assets/lottie/string/contact";
+import AnimationLottie from "@/components/share/glowcard/animation-lottie";
 import { useCurrentApp } from "components/context/app.context";
+import { Button, Col, Container, Row } from "react-bootstrap";
 import { isMobile } from "react-device-detect";
+import { useTranslation } from "react-i18next"; // <-- Thêm import
 import { Link } from "react-router-dom";
 import styles from "styles/client.module.scss";
-import AnimationLottie from "@/components/share/glowcard/animation-lottie";
-import { CONTACT_LOTTIE } from "@/assets/lottie/string/contact";
-import { useTranslation } from "react-i18next"; // <-- Thêm import
 
 const Banner = () => {
   const { theme } = useCurrentApp();
@@ -35,7 +35,7 @@ const Banner = () => {
                 lineHeight: "1.2",
               }}
             >
-              {t("banner.title")} <span className="brand-red">JobHunter</span>
+              {t("banner.title")} <span className="brand-red">JobZone</span>
             </h1>
             <p
               style={{
