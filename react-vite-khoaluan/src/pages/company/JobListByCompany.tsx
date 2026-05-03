@@ -25,7 +25,7 @@ const JobListByCompany = ({ companyId }: IProps) => {
       setIsLoading(true);
       const page = jobSearchParams.get("job_page") || "1";
       const size = jobSearchParams.get("job_size") || "5"; // Hiển thị 5 jobs mỗi trang
-      const query = `page=${page}&size=${size}&sort=updatedAt,desc`;
+      const query = `page=${page}&pageSize=${size}&sorts=-updatedAt`;
 
       const res = await callFetchJobsByCompany(companyId, query);
 

@@ -96,9 +96,9 @@ namespace jobhunter.ASP.NET.Controllers
         /// </summary>
         [HttpGet("roles")]
         [ApiMessage("Fetch roles")]
-        public async Task<IActionResult> GetRoles([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? filter = null)
+        public async Task<IActionResult> GetRoles([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            return Ok(await _roleService.GetRolesAsync(page, size, filter));
+            return Ok(await _roleService.GetRolesAsync(sieveModel));
         }
 
         /// <summary>

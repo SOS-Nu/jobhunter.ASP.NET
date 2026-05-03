@@ -34,9 +34,9 @@ namespace jobhunter.ASP.NET.Controllers
         [HttpGet("companies")]
         [AllowAnonymous]
         [ApiMessage("Fetch all Companies")]
-        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? filter = null)
+        public async Task<IActionResult> GetAll([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            return Ok(await _companyService.GetAllCompaniesAsync(page, size, filter));
+            return Ok(await _companyService.GetAllCompaniesAsync(sieveModel));
         }
 
         [HttpPut("companies")]

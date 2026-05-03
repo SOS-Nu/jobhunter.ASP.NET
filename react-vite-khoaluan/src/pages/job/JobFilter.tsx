@@ -29,33 +29,26 @@ const JobFilter = (props: IProps) => {
 
   // useEffect không cần thay đổi
   useEffect(() => {
-    const filterParam = searchParams.get("filter") || "";
-    const sortParam = searchParams.get("sort") || "updatedAt,desc";
+    const filterParam = searchParams.get("filters") || "";
+    const sortParam = searchParams.get("sorts") || "-updatedAt";
 
-    const levelGroupMatch = filterParam.match(/\(([^)]+)\)/);
-    let currentLevels: string[] = [];
-    if (levelGroupMatch && levelGroupMatch[1]) {
-      const levelMatches = levelGroupMatch[1].matchAll(
-        /level\s*=\s*'([^']+)'/g
-      );
-      currentLevels = Array.from(levelMatches, (match) => match[1]);
-    } else {
-      const singleLevelMatch = filterParam.match(/level\s*=\s*'([^']+)'/);
-      if (singleLevelMatch) {
-        currentLevels = [singleLevelMatch[1]];
-      }
-    }
+    // Phân tích "Trình độ" (level)
+    const levelMatches = filterParam.matchAll(/level==([a-zA-Z]+)/g);
+    const currentLevels = Array.from(new Set(Array.from(levelMatches, (match) => match[1])));
     setSelectedLevels(currentLevels);
-    const minSalaryMatch = filterParam.match(/salary\s*>=\s*(\d+)/);
+
+    // Phân tích "Mức lương" (salary)
+    const minSalaryMatch = filterParam.match(/salary>=(\d+)/);
     setMinSalary(minSalaryMatch ? minSalaryMatch[1] : "");
-    const maxSalaryMatch = filterParam.match(/salary\s*<=\s*(\d+)/);
+    const maxSalaryMatch = filterParam.match(/salary<=(\d+)/);
     setMaxSalary(maxSalaryMatch ? maxSalaryMatch[1] : "");
 
-    if (sortParam.startsWith("salary")) {
-      setSortSalary(sortParam.includes("desc") ? "desc" : "asc");
+    // Phân tích "Sắp xếp" (sorts)
+    if (sortParam.includes("salary")) {
+      setSortSalary(sortParam.startsWith("-") ? "desc" : "asc");
       setSortTime("");
-    } else {
-      setSortTime(sortParam.includes("asc") ? "oldest" : "newest");
+    } else if (sortParam.includes("updatedAt")) {
+      setSortTime(sortParam.startsWith("-") ? "newest" : "oldest");
       setSortSalary("");
     }
   }, [searchParams]);

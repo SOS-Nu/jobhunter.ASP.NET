@@ -26,7 +26,7 @@ const ClientCompanyPage = () => {
     if (isInitialLoad.current) {
       isInitialLoad.current = false; // Đánh dấu không còn là lần đầu nữa
       // Luôn fetch dữ liệu: hoặc theo query trên URL (nếu có), hoặc fetch mặc định
-      dispatch(fetchCompany({ query: query || "sort=updatedAt,desc&size=6" }));
+      dispatch(fetchCompany({ query: query || "sorts=-updatedAt&pageSize=6" }));
     } else {
       // Trường hợp 2: Component re-render do URL thay đổi
       if (query) {
@@ -44,7 +44,7 @@ const ClientCompanyPage = () => {
   const handleOnchangePage = (page: number, pageSize: number) => {
     setSearchParams((prev) => {
       prev.set("page", page.toString());
-      prev.set("size", pageSize.toString());
+      prev.set("pageSize", pageSize.toString());
       return prev;
     });
 

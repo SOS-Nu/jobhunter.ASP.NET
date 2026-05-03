@@ -7,6 +7,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -16,7 +18,7 @@ namespace jobhunter.ASP.NET.Services
         Task<ResBulkCreateSkillDTO> BulkCreateAsync(List<ReqBulkCreateSkillDTO> dtos);
         Task<ResSkillDTO> UpdateAsync(ReqUpdateSkillDTO dto);
         Task DeleteAsync(long id);
-        Task<PaginatedResponse<ResSkillDTO>> GetAllAsync(int page, int pageSize);
+        Task<PaginatedResponse<ResSkillDTO>> GetAllAsync(SieveModel sieveModel);
         Task<string> GetAllSkillNamesAsStringAsync();
     }
 
@@ -24,11 +26,13 @@ namespace jobhunter.ASP.NET.Services
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public SkillService(AppDbContext context, IMapper mapper)
+        public SkillService(AppDbContext context, IMapper mapper, ISieveProcessor sieveProcessor)
         {
             _context = context;
             _mapper = mapper;
+            _sieveProcessor = sieveProcessor;
         }
 
         public async Task<ResSkillDTO> CreateAsync(ReqCreateSkillDTO dto)
@@ -120,17 +124,19 @@ namespace jobhunter.ASP.NET.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PaginatedResponse<ResSkillDTO>> GetAllAsync(int page, int pageSize)
+        public async Task<PaginatedResponse<ResSkillDTO>> GetAllAsync(SieveModel sieveModel)
         {
             var query = _context.Skills.AsQueryable();
 
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(s => s.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery
                 .ProjectTo<ResSkillDTO>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResSkillDTO>
             {

@@ -5,6 +5,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -20,16 +22,18 @@ namespace jobhunter.ASP.NET.Services
         Task<ResRoleDTO> CreateAsync(Role r);
         Task<ResRoleDTO> UpdateAsync(Role r);
         Task DeleteAsync(long id);
-        Task<PaginatedResponse<ResRoleDTO>> GetRolesAsync(int page, int pageSize, string? filter);
+        Task<PaginatedResponse<ResRoleDTO>> GetRolesAsync(SieveModel sieveModel);
     }
 
     public class RoleService : IRoleService
     {
         private readonly AppDbContext _context;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public RoleService(AppDbContext context)
+        public RoleService(AppDbContext context, ISieveProcessor sieveProcessor)
         {
             _context = context;
+            _sieveProcessor = sieveProcessor;
         }
 
         /// <summary>
@@ -130,23 +134,19 @@ namespace jobhunter.ASP.NET.Services
         /// Maps from: RoleService.getRoles(Specification, Pageable) 
         /// Uses .Select() projection to avoid N+1 on permissions.
         /// </summary>
-        public async Task<PaginatedResponse<ResRoleDTO>> GetRolesAsync(int page, int pageSize, string? filter)
+        public async Task<PaginatedResponse<ResRoleDTO>> GetRolesAsync(SieveModel sieveModel)
         {
             var query = _context.Roles.Include(r => r.Permissions).AsQueryable();
 
-            if (!string.IsNullOrEmpty(filter))
-            {
-                query = query.Where(r => r.Name.Contains(filter) || (r.Description != null && r.Description.Contains(filter)));
-            }
-
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(r => r.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
 
             var dtos = items.Select(MapToDto).ToList();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResRoleDTO>
             {

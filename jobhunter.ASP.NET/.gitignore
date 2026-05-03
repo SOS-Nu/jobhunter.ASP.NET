@@ -35,7 +35,7 @@ obj/
 
 ## [ Secrets & Configuration ]
 # Chỉ nên đẩy file template, không nên đẩy file chứa mật khẩu thật
-# appsettings.Development.json
+appsettings.Development.json
 # usersecrets.json
 
 ## [ Operating System ]

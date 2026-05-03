@@ -25,7 +25,6 @@ import queryString from "query-string";
 import { useMemo, useRef, useState } from "react";
 import { CSVLink } from "react-csv";
 import { useNavigate } from "react-router-dom";
-import { sfIn } from "spring-filter-query-builder";
 import ImportJob from "../data/import.job";
 
 const JobPage = () => {
@@ -219,42 +218,46 @@ const JobPage = () => {
 
   const buildQuery = (params: any, sort: any, filter: any) => {
     const clone = { ...params };
-    let parts = [];
-    if (clone.name) parts.push(`name ~ '${clone.name}'`);
-    if (clone.salary) parts.push(`salary ~ '${clone.salary}'`);
-    if (clone.address) parts.push(`address ~ '${clone.address}'`); // NEW: Thêm filter address
+    const filterParts: string[] = [];
+    if (clone.name) filterParts.push(`name@=${clone.name}`);
+    if (clone.salary) filterParts.push(`salary==${clone.salary}`);
+    if (clone.location) filterParts.push(`location@=${clone.location}`);
+
     if (clone?.level?.length) {
-      parts.push(`${sfIn("level", clone.level).toString()}`);
+      filterParts.push(clone.level.map((item: any) => "level==" + item).join("|"));
     }
 
-    clone.filter = parts.join(" and ");
-    if (!clone.filter) delete clone.filter;
+    if (filterParts.length > 0) {
+      clone.filters = filterParts.join(",");
+    } else {
+      delete clone.filters;
+    }
 
     clone.page = clone.current;
-    clone.size = clone.pageSize;
+    clone.pageSize = clone.pageSize;
 
     delete clone.current;
     delete clone.pageSize;
     delete clone.name;
     delete clone.salary;
-    delete clone.address; // NEW: Xóa address khỏi params cuối
+    delete clone.location;
     delete clone.level;
 
     let temp = queryString.stringify(clone);
 
     let sortBy = "";
-    const fields = ["name", "address", "salary", "createdAt", "updatedAt"]; // NEW: Thêm address vào sort fields
+    const fields = ["name", "location", "salary", "createdAt", "updatedAt"];
     if (sort) {
       for (const field of fields) {
         if (sort[field]) {
-          sortBy = `sort=${field},${sort[field] === "ascend" ? "asc" : "desc"}`;
+          sortBy = `sorts=${sort[field] === "ascend" ? "" : "-"}${field}`;
           break;
         }
       }
     }
 
     if (Object.keys(sortBy).length === 0) {
-      temp = `${temp}&sort=updatedAt,desc`;
+      temp = `${temp}&sorts=-updatedAt`;
     } else {
       temp = `${temp}&${sortBy}`;
     }

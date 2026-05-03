@@ -179,16 +179,16 @@ const PermissionPage = () => {
     const clone = { ...params };
 
     let parts = [];
-    if (clone.name) parts.push(`name ~ '${clone.name}'`);
-    if (clone.apiPath) parts.push(`apiPath ~ '${clone.apiPath}'`);
-    if (clone.method) parts.push(`method ~ '${clone.method}'`);
-    if (clone.module) parts.push(`module ~ '${clone.module}'`);
+    if (clone.name) parts.push(`name@=${clone.name}`);
+    if (clone.apiPath) parts.push(`apiPath@=${clone.apiPath}`);
+    if (clone.method) parts.push(`method@=${clone.method}`);
+    if (clone.module) parts.push(`module@=${clone.module}`);
 
-    clone.filter = parts.join(" and ");
-    if (!clone.filter) delete clone.filter;
+    clone.filters = parts.join(",");
+    if (!clone.filters) delete clone.filters;
 
     clone.page = clone.current;
-    clone.size = clone.pageSize;
+    clone.pageSize = clone.pageSize;
 
     delete clone.current;
     delete clone.pageSize;
@@ -212,7 +212,7 @@ const PermissionPage = () => {
     if (sort) {
       for (const field of fields) {
         if (sort[field]) {
-          sortBy = `sort=${field},${sort[field] === "ascend" ? "asc" : "desc"}`;
+          sortBy = `sorts=${sort[field] === "ascend" ? "" : "-"}${field}`;
           break; // Remove this if you want to handle multiple sort parameters
         }
       }
@@ -220,7 +220,7 @@ const PermissionPage = () => {
 
     //mặc định sort theo updatedAt
     if (Object.keys(sortBy).length === 0) {
-      temp = `${temp}&sort=updatedAt,desc`;
+      temp = `${temp}&sorts=-updatedAt`;
     } else {
       temp = `${temp}&${sortBy}`;
     }

@@ -55,16 +55,16 @@ namespace jobhunter.ASP.NET.Controllers
 
         [HttpGet("resumes")]
         [ApiMessage("Fetch all resume with paginate")]
-        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetAll([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            return Ok(await _resumeService.GetAllAsync(page, size));
+            return Ok(await _resumeService.GetAllAsync(sieveModel));
         }
 
         [HttpPost("resumes/by-user")]
         [ApiMessage("Get list resumes by user")]
-        public async Task<IActionResult> GetByUser([FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetByUser([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            return Ok(await _resumeService.GetByUserAsync(page, size));
+            return Ok(await _resumeService.GetByUserAsync(sieveModel));
         }
     }
 }

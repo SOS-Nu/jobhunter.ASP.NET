@@ -20,7 +20,7 @@ import ModalUser from "@/components/admin/user/modal.user";
 import ViewDetailUser from "@/components/admin/user/view.user";
 import Access from "@/components/share/access";
 import { ALL_PERMISSIONS } from "@/config/permissions";
-import { sfLike } from "spring-filter-query-builder";
+
 import { CSVLink } from "react-csv";
 import ImportUser from "./data/import.user";
 
@@ -199,44 +199,42 @@ const UserPage = () => {
   const buildQuery = (params: any, sort: any, filter: any) => {
     const q: any = {
       page: params.current,
-      size: params.pageSize,
-      filter: "",
+      pageSize: params.pageSize,
     };
 
     const clone = { ...params };
-    if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
+    if (clone.name) q.filters = `name@=${clone.name}`;
     if (clone.email) {
-      q.filter = clone.name
-        ? q.filter + " and " + `${sfLike("email", clone.email)}`
-        : `${sfLike("email", clone.email)}`;
+      q.filters = clone.name
+        ? q.filters + "," + `email@=${clone.email}`
+        : `email@=${clone.email}`;
     }
 
-    if (!q.filter) delete q.filter;
     let temp = queryString.stringify(q);
 
     let sortBy = "";
     if (sort && sort.name) {
-      sortBy = sort.name === "ascend" ? "sort=name,asc" : "sort=name,desc";
+      sortBy = sort.name === "ascend" ? "sorts=name" : "sorts=-name";
     }
     if (sort && sort.email) {
-      sortBy = sort.email === "ascend" ? "sort=email,asc" : "sort=email,desc";
+      sortBy = sort.email === "ascend" ? "sorts=email" : "sorts=-email";
     }
     if (sort && sort.createdAt) {
       sortBy =
         sort.createdAt === "ascend"
-          ? "sort=createdAt,asc"
-          : "sort=createdAt,desc";
+          ? "sorts=createdAt"
+          : "sorts=-createdAt";
     }
     if (sort && sort.updatedAt) {
       sortBy =
         sort.updatedAt === "ascend"
-          ? "sort=updatedAt,asc"
-          : "sort=updatedAt,desc";
+          ? "sorts=updatedAt"
+          : "sorts=-updatedAt";
     }
 
     //mặc định sort theo createAt desc
     if (Object.keys(sortBy).length === 0) {
-      temp = `${temp}&sort=createdAt,desc`;
+      temp = `${temp}&sorts=-createdAt`;
     } else {
       temp = `${temp}&${sortBy}`;
     }

@@ -5,6 +5,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -13,7 +15,7 @@ namespace jobhunter.ASP.NET.Services
         Task<Company> CreateCompanyAsync(Company company);
         Task<Company?> UpdateCompanyAsync(Company company);
         Task DeleteCompanyAsync(long id);
-        Task<PaginatedResponse<ResFetchCompanyDTO>> GetAllCompaniesAsync(int page, int pageSize, string? filter);
+        Task<PaginatedResponse<ResFetchCompanyDTO>> GetAllCompaniesAsync(SieveModel sieveModel);
         Task<ResFetchCompanyDTO?> GetCompanyByIdAsync(long id);
         Task<ResCreateCompanyDTO> CreateCompanyByUserAsync(DTOs.Request.ReqCreateCompanyDTO req);
         Task<Company> UpdateCompanyByUserAsync(DTOs.Request.ReqUpdateCompanyDTO req);
@@ -25,12 +27,14 @@ namespace jobhunter.ASP.NET.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public CompanyService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService)
+        public CompanyService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, ISieveProcessor sieveProcessor)
         {
             _context = context;
             _mapper = mapper;
             _currentUserService = currentUserService;
+            _sieveProcessor = sieveProcessor;
         }
 
         public async Task<Company> CreateCompanyAsync(Company company)
@@ -61,14 +65,16 @@ namespace jobhunter.ASP.NET.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PaginatedResponse<ResFetchCompanyDTO>> GetAllCompaniesAsync(int page, int pageSize, string? filter)
+        public async Task<PaginatedResponse<ResFetchCompanyDTO>> GetAllCompaniesAsync(SieveModel sieveModel)
         {
             var query = _context.Companies.AsQueryable();
-            if (!string.IsNullOrEmpty(filter))
-                query = query.Where(c => c.Name.Contains(filter));
 
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(c => c.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
+
             var dtos = items.Select(c => { 
                 var d = _mapper.Map<ResFetchCompanyDTO>(c); 
                 d.TotalJobs = _context.Jobs.Count(j => j.CompanyId == c.Id && j.Active); 
@@ -86,6 +92,9 @@ namespace jobhunter.ASP.NET.Services
                 
                 return d; 
             }).ToList();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResFetchCompanyDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = dtos };
         }

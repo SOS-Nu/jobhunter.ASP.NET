@@ -6,6 +6,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -15,8 +17,8 @@ namespace jobhunter.ASP.NET.Services
         Task<ResUpdateJobDTO?> UpdateAsync(Job job);
         Task DeleteAsync(long id);
         Task<ResFetchJobDTO?> GetByIdAsync(long id);
-        Task<PaginatedResponse<ResFetchJobDTO>> GetAllAsync(int page, int pageSize, string? filter);
-        Task<PaginatedResponse<ResFetchJobDTO>> GetByCompanyAsync(long companyId, int page, int pageSize);
+        Task<PaginatedResponse<ResFetchJobDTO>> GetAllAsync(SieveModel sieveModel);
+        Task<PaginatedResponse<ResFetchJobDTO>> GetByCompanyAsync(long companyId, SieveModel sieveModel);
         Task<ResCreateJobDTO> CreateForUserCompanyAsync(DTOs.Request.ReqCreateJobDTO dto);
         Task<ResUpdateJobDTO> UpdateForUserCompanyAsync(DTOs.Request.ReqUpdateJobDTO dto);
         Task DeleteForUserCompanyAsync(long id);
@@ -27,10 +29,11 @@ namespace jobhunter.ASP.NET.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public JobService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService)
+        public JobService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, ISieveProcessor sieveProcessor)
         {
-            _context = context; _mapper = mapper; _currentUserService = currentUserService;
+            _context = context; _mapper = mapper; _currentUserService = currentUserService; _sieveProcessor = sieveProcessor;
         }
 
         public async Task<ResCreateJobDTO> CreateAsync(ReqCreateJobDTO dto)
@@ -108,7 +111,7 @@ namespace jobhunter.ASP.NET.Services
             return dto;
         }
 
-        public async Task<PaginatedResponse<ResFetchJobDTO>> GetAllAsync(int page, int pageSize, string? filter)
+        public async Task<PaginatedResponse<ResFetchJobDTO>> GetAllAsync(SieveModel sieveModel)
         {
             var query = _context.Jobs.Include(j => j.Company).Include(j => j.Skills).AsQueryable();
 
@@ -134,11 +137,15 @@ namespace jobhunter.ASP.NET.Services
                 query = query.Where(j => j.Active);
             }
 
-            if (!string.IsNullOrEmpty(filter))
-                query = query.Where(j => j.Name.Contains(filter) || j.Location.Contains(filter));
+            // Apply Sieve filtering and sorting (before pagination to get total count)
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
 
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(j => j.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            
+            // Apply Sieve pagination
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+
+            var items = await paginatedQuery.ToListAsync();
             var dtos = _mapper.Map<List<ResFetchJobDTO>>(items);
 
             // Set isApplied flag for each job if user is logged in (matching Java logic)
@@ -156,14 +163,25 @@ namespace jobhunter.ASP.NET.Services
                 }
             }
 
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
             return new PaginatedResponse<ResFetchJobDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = dtos };
         }
 
-        public async Task<PaginatedResponse<ResFetchJobDTO>> GetByCompanyAsync(long companyId, int page, int pageSize)
+        public async Task<PaginatedResponse<ResFetchJobDTO>> GetByCompanyAsync(long companyId, SieveModel sieveModel)
         {
-            var query = _context.Jobs.Include(j => j.Company).Include(j => j.Skills).Where(j => j.CompanyId == companyId && j.Active);
+            var query = _context.Jobs.Include(j => j.Company).Include(j => j.Skills).Where(j => j.CompanyId == companyId && j.Active).AsQueryable();
+            
+            // Apply Sieve filtering and sorting
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(j => j.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            
+            // Apply Sieve pagination
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
             return new PaginatedResponse<ResFetchJobDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = _mapper.Map<List<ResFetchJobDTO>>(items) };
         }
 

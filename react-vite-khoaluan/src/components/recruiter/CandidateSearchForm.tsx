@@ -44,7 +44,7 @@ const CandidateSearchForm = (props: IProps) => {
 
     try {
       // 3. Gọi API tìm kiếm trực tiếp
-      const res = await callFindCandidatesWithAI(formData, "page=0&size=10");
+      const res = await callFindCandidatesWithAI(formData, "page=1&pageSize=10");
 
       if (res.data?.result) {
         // 4. Cập nhật kết quả

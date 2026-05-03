@@ -25,7 +25,6 @@ import {
 import dayjs from "dayjs";
 import queryString from "query-string";
 import { useRef, useState } from "react";
-import { sfLike } from "spring-filter-query-builder";
 
 const CompanyPage = () => {
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -198,7 +197,7 @@ const CompanyPage = () => {
     const clone = { ...params };
     const q: any = {
       page: params.current,
-      size: params.pageSize,
+      pageSize: params.pageSize,
     };
 
     const searchableFields = ["name", "field", "scale", "location", "address"];
@@ -209,12 +208,12 @@ const CompanyPage = () => {
         // Với valueType là 'select', ProTable sẽ trả về giá trị chính xác,
         // nên ta có thể dùng điều kiện bằng (eq) hoặc giống (like).
         // `like` sẽ linh hoạt hơn nếu backend hỗ trợ.
-        filterConditions.push(sfLike(field, clone[field]).toString());
+        filterConditions.push(`${field}@=${clone[field]}`);
       }
     });
 
     if (filterConditions.length > 0) {
-      q.filter = filterConditions.join(" and ");
+      q.filters = filterConditions.join(",");
     }
 
     let temp = queryString.stringify(q);
@@ -231,7 +230,7 @@ const CompanyPage = () => {
     ];
     for (const field of sortableFields) {
       if (sort && sort[field]) {
-        sortBy = `sort=${field},${sort[field] === "ascend" ? "asc" : "desc"}`;
+        sortBy = `sorts=${sort[field] === "ascend" ? "" : "-"}${field}`;
         break;
       }
     }
@@ -239,7 +238,7 @@ const CompanyPage = () => {
     if (sortBy) {
       temp = `${temp}&${sortBy}`;
     } else {
-      temp = `${temp}&sort=updatedAt,desc`;
+      temp = `${temp}&sorts=-updatedAt`;
     }
 
     return temp;

@@ -58,9 +58,9 @@ namespace jobhunter.ASP.NET.Controllers
 
         [HttpGet("payment/allhistory")]
         [ApiMessage("Get all payment history with pagination")]
-        public async Task<IActionResult> GetAllPaymentHistory([FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetAllPaymentHistory([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            var res = await _paymentService.GetAllPaymentHistoryAsync(page, size);
+            var res = await _paymentService.GetAllPaymentHistoryAsync(sieveModel);
             return Ok(res);
         }
 

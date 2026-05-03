@@ -25,7 +25,7 @@ import {
 import dayjs from "dayjs";
 import queryString from "query-string";
 import { useRef, useState } from "react";
-import { sfEqual, sfLike } from "spring-filter-query-builder";
+
 import ModalExportPayment from "./modal.export";
 
 const PaymentPage = () => {
@@ -152,27 +152,25 @@ const PaymentPage = () => {
 
   const buildQuery = (params: any, sort: any, filter: any) => {
     const clone = { ...params };
-    // Logic build query với spring-filter
     let q: any = {
       page: params.current,
-      size: params.pageSize,
-      filter: "",
+      pageSize: params.pageSize,
     };
 
-    const filters = [];
-    if (clone.orderId) filters.push(sfLike("orderId", clone.orderId));
-    if (clone.status) filters.push(sfEqual("status", clone.status));
+    const filterConditions = [];
+    if (clone.orderId) filterConditions.push(`orderId@=${clone.orderId}`);
+    if (clone.status) filterConditions.push(`status==${clone.status}`);
     // Note: Filter nested object như user.email cần backend hỗ trợ hoặc dùng query đặc biệt
 
-    q.filter = filters.join(" and ");
-    if (!q.filter) delete q.filter;
+    q.filters = filterConditions.join(",");
+    if (!q.filters) delete q.filters;
 
     let sortBy = "";
     if (sort?.createdAt)
-      sortBy = `sort=createdAt,${sort.createdAt === "ascend" ? "asc" : "desc"}`;
+      sortBy = `sorts=${sort.createdAt === "ascend" ? "" : "-"}createdAt`;
     if (sort?.amount)
-      sortBy = `sort=amount,${sort.amount === "ascend" ? "asc" : "desc"}`;
-    if (!sortBy) sortBy = "sort=createdAt,desc";
+      sortBy = `sorts=${sort.amount === "ascend" ? "" : "-"}amount`;
+    if (!sortBy) sortBy = "sorts=-createdAt";
 
     return `${queryString.stringify(q)}&${sortBy}`;
   };

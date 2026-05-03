@@ -55,8 +55,8 @@ const HomePage = () => {
   }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
-    const defaultJobQuery = "sort=updatedAt,desc&size=6";
-    const defaultCompanyQuery = "sort=updatedAt,desc&size=6";
+    const defaultJobQuery = "sorts=-updatedAt&pageSize=6";
+    const defaultCompanyQuery = "sorts=-updatedAt&pageSize=6";
 
     dispatch(fetchJob({ query: defaultJobQuery, user }));
     dispatch(fetchCompany({ query: defaultCompanyQuery }));

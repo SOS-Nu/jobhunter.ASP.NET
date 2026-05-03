@@ -45,8 +45,7 @@ const RecruiterDashboard = () => {
     }
 
     try {
-      // Vì backend dùng page 0-indexed, trừ đi 1
-      const query = `page=${page - 1}&size=${pageSize}`;
+      const query = `page=${page}&pageSize=${pageSize}`;
       const res = await callFindCandidatesWithAI(currentSearchData, query);
 
       if (res.data) {

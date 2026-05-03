@@ -37,9 +37,9 @@ namespace jobhunter.ASP.NET.Controllers
         [HttpGet("comments/by-company/{companyId}")]
         [AllowAnonymous]
         [ApiMessage("Fetch comments by company id")]
-        public async Task<IActionResult> GetCommentsByCompany(long companyId, [FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetCommentsByCompany(long companyId, [FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            var res = await _commentService.GetCommentsByCompanyAsync(companyId, page, size);
+            var res = await _commentService.GetCommentsByCompanyAsync(companyId, sieveModel);
             return Ok(res);
         }
     }

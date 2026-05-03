@@ -5,6 +5,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -17,7 +19,7 @@ namespace jobhunter.ASP.NET.Services
         Task<User?> UpdateUserAsync(User reqUser);
         Task<User?> UpdateOwnUserAsync(User reqUser);
         Task DeleteUserAsync(long id);
-        Task<PaginatedResponse<ResUserDTO>> GetAllUsersAsync(int page, int pageSize, string? filter);
+        Task<PaginatedResponse<ResUserDTO>> GetAllUsersAsync(SieveModel sieveModel);
         Task<UserSession> CreateSessionAsync(User user, string jti, DateTime expiresAt);
         Task<UserSession?> FindSessionByJtiAsync(string jti);
         Task DeleteSessionByJtiAsync(string jti);
@@ -49,11 +51,12 @@ namespace jobhunter.ASP.NET.Services
         private readonly ILogger<UserService> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
+        private readonly ISieveProcessor _sieveProcessor;
         private const int MaxSessionsPerUser = 50;
 
         public UserService(AppDbContext context, IMapper mapper,
             ICurrentUserService currentUserService, ILogger<UserService> logger,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, ISieveProcessor sieveProcessor)
         {
             _context = context;
             _mapper = mapper;
@@ -61,6 +64,7 @@ namespace jobhunter.ASP.NET.Services
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
+            _sieveProcessor = sieveProcessor;
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
@@ -210,29 +214,20 @@ namespace jobhunter.ASP.NET.Services
             }
         }
 
-        public async Task<PaginatedResponse<ResUserDTO>> GetAllUsersAsync(int page, int pageSize, string? filter)
+        public async Task<PaginatedResponse<ResUserDTO>> GetAllUsersAsync(SieveModel sieveModel)
         {
             var query = _context.Users
                 .Include(u => u.Company)
                 .Include(u => u.Role)
                 .AsQueryable();
 
-            // Simple filter support (matching Spring Boot @Filter behavior)
-            if (!string.IsNullOrEmpty(filter))
-            {
-                query = query.Where(u =>
-                    (u.Name != null && u.Name.Contains(filter)) ||
-                    u.Email.Contains(filter));
-            }
-
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(u => u.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
             var dtos = _mapper.Map<List<ResUserDTO>>(items);
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResUserDTO>
             {

@@ -10,6 +10,7 @@ using Serilog;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.Extensions.FileProviders;
+using Sieve.Services;
 
 // ========================
 // SERILOG BOOTSTRAP (agents.md: Logging: Serilog)
@@ -116,6 +117,13 @@ try
     builder.Services.AddScoped<ISkillService, SkillService>();
     builder.Services.AddScoped<IDashboardService, DashboardService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.Configure<Sieve.Models.SieveOptions>(options =>
+    {
+        options.DefaultPageSize = 10;
+        options.MaxPageSize = 100;
+        options.ThrowExceptions = false; // silently ignore unmapped properties
+    });
+    builder.Services.AddScoped<ISieveProcessor, ApplicationSieveProcessor>();
 
     builder.Services.AddHostedService<BackgroundWorkerService>();
 

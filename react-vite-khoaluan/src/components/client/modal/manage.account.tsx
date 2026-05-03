@@ -136,7 +136,7 @@ const JobByEmail = () => {
     const init = async () => {
       // 1. Fetch tất cả skill có thể chọn
       const skillRes = await callFetchAllSkill(
-        "page=1&size=100&sort=createdAt,desc"
+        "page=1&pageSize=100&sorts=-createdAt"
       );
       if (skillRes && skillRes.data) {
         const options = skillRes.data.result.map((item) => ({

@@ -6,6 +6,8 @@ using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Enums;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -15,8 +17,8 @@ namespace jobhunter.ASP.NET.Services
         Task<ResUpdateResumeDTO?> UpdateAsync(long id, ResumeStateEnum? status);
         Task DeleteAsync(long id);
         Task<ResFetchResumeDTO?> GetByIdAsync(long id);
-        Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(int page, int pageSize);
-        Task<PaginatedResponse<ResFetchResumeDTO>> GetByUserAsync(int page, int pageSize);
+        Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(SieveModel sieveModel);
+        Task<PaginatedResponse<ResFetchResumeDTO>> GetByUserAsync(SieveModel sieveModel);
     }
 
     public class ResumeService : IResumeService
@@ -25,10 +27,11 @@ namespace jobhunter.ASP.NET.Services
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
         private readonly IUserService _userService;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public ResumeService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserService userService)
+        public ResumeService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserService userService, ISieveProcessor sieveProcessor)
         {
-            _context = context; _mapper = mapper; _currentUserService = currentUserService; _userService = userService;
+            _context = context; _mapper = mapper; _currentUserService = currentUserService; _userService = userService; _sieveProcessor = sieveProcessor;
         }
 
         public async Task<ResCreateResumeDTO> CreateAsync(Resume resume)
@@ -104,8 +107,11 @@ namespace jobhunter.ASP.NET.Services
             return dto;
         }
 
-        public async Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(int page, int pageSize)
+        public async Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(SieveModel sieveModel)
         {
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
+
             // Company-scoped access (matching Spring Boot logic)
             var email = _currentUserService.GetCurrentUserEmail();
             if (string.IsNullOrEmpty(email))
@@ -116,22 +122,30 @@ namespace jobhunter.ASP.NET.Services
                 return new PaginatedResponse<ResFetchResumeDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize }, Result = new List<ResFetchResumeDTO>() };
 
             var query = _context.Resumes.Include(r => r.User).Include(r => r.Job).ThenInclude(j => j!.Company)
-                .Where(r => r.Job != null && r.Job.CompanyId == user.CompanyId);
+                .Where(r => r.Job != null && r.Job.CompanyId == user.CompanyId).AsQueryable();
 
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
             var dtos = _mapper.Map<List<ResFetchResumeDTO>>(items);
 
             return new PaginatedResponse<ResFetchResumeDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = dtos };
         }
 
-        public async Task<PaginatedResponse<ResFetchResumeDTO>> GetByUserAsync(int page, int pageSize)
+        public async Task<PaginatedResponse<ResFetchResumeDTO>> GetByUserAsync(SieveModel sieveModel)
         {
             var email = _currentUserService.GetCurrentUserEmail() ?? "";
-            var query = _context.Resumes.Include(r => r.User).Include(r => r.Job).ThenInclude(j => j!.Company).Where(r => r.Email == email);
+            var query = _context.Resumes.Include(r => r.User).Include(r => r.Job).ThenInclude(j => j!.Company).Where(r => r.Email == email).AsQueryable();
+            
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(r => r.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
             var dtos = _mapper.Map<List<ResFetchResumeDTO>>(items);
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
             return new PaginatedResponse<ResFetchResumeDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = dtos };
         }
     }

@@ -5,6 +5,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -20,18 +22,20 @@ namespace jobhunter.ASP.NET.Services
         Task<Permission> CreateAsync(Permission p);
         Task<Permission> UpdateAsync(Permission p);
         Task DeleteAsync(long id);
-        Task<PaginatedResponse<ResPermissionDTO>> GetPermissionsAsync(int page, int pageSize, string? filter);
+        Task<PaginatedResponse<ResPermissionDTO>> GetPermissionsAsync(SieveModel sieveModel);
     }
 
     public class PermissionService : IPermissionService
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public PermissionService(AppDbContext context, IMapper mapper)
+        public PermissionService(AppDbContext context, IMapper mapper, ISieveProcessor sieveProcessor)
         {
             _context = context;
             _mapper = mapper;
+            _sieveProcessor = sieveProcessor;
         }
 
         /// <summary>
@@ -101,23 +105,15 @@ namespace jobhunter.ASP.NET.Services
         /// Paginated permission list with optional name/module filter.
         /// Maps from: PermissionService.getPermissions(Specification, Pageable)
         /// </summary>
-        public async Task<PaginatedResponse<ResPermissionDTO>> GetPermissionsAsync(int page, int pageSize, string? filter)
+        public async Task<PaginatedResponse<ResPermissionDTO>> GetPermissionsAsync(SieveModel sieveModel)
         {
             var query = _context.Permissions.AsQueryable();
 
-            if (!string.IsNullOrEmpty(filter))
-            {
-                query = query.Where(p =>
-                    p.Name.Contains(filter) ||
-                    p.Module.Contains(filter) ||
-                    p.ApiPath.Contains(filter));
-            }
-
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            
+            var items = await paginatedQuery
                 .Select(p => new ResPermissionDTO
                 {
                     Id = p.Id,
@@ -131,6 +127,9 @@ namespace jobhunter.ASP.NET.Services
                     UpdatedBy = p.UpdatedBy
                 })
                 .ToListAsync();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResPermissionDTO>
             {

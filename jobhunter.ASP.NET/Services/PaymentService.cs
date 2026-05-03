@@ -11,6 +11,8 @@ using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Enums;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -19,7 +21,7 @@ namespace jobhunter.ASP.NET.Services
         Task<ResPaymentUrlDTO> CreatePaymentUrlAsync(string ipAddress);
         Task<ResPaymentCallbackDTO> HandleCallbackAsync(Dictionary<string, string> queryParams);
         Task<List<ResPaymentHistoryDTO>> GetPaymentHistoryAsync();
-        Task<PaginatedResponse<ResPaymentHistoryDTO>> GetAllPaymentHistoryAsync(int page, int pageSize);
+        Task<PaginatedResponse<ResPaymentHistoryDTO>> GetAllPaymentHistoryAsync(SieveModel sieveModel);
         Task<ResPaymentHistoryDTO> GetPaymentHistoryByIdAsync(long id);
         Task<ResPaymentHistoryDTO> UpdatePaymentHistoryStatusAsync(ReqUpdatePaymentStatusDTO dto);
         Task<byte[]> ExportPaymentExcelAsync();
@@ -32,19 +34,22 @@ namespace jobhunter.ASP.NET.Services
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PaymentService> _logger;
+        private readonly ISieveProcessor _sieveProcessor;
 
         public PaymentService(
             AppDbContext context,
             ICurrentUserService currentUserService,
             IMapper mapper,
             IConfiguration configuration,
-            ILogger<PaymentService> logger)
+            ILogger<PaymentService> logger,
+            ISieveProcessor sieveProcessor)
         {
             _context = context;
             _currentUserService = currentUserService;
             _mapper = mapper;
             _configuration = configuration;
             _logger = logger;
+            _sieveProcessor = sieveProcessor;
         }
 
         public async Task<ResPaymentUrlDTO> CreatePaymentUrlAsync(string ipAddress)
@@ -153,19 +158,21 @@ namespace jobhunter.ASP.NET.Services
                 .ToListAsync();
         }
 
-        public async Task<PaginatedResponse<ResPaymentHistoryDTO>> GetAllPaymentHistoryAsync(int page, int pageSize)
+        public async Task<PaginatedResponse<ResPaymentHistoryDTO>> GetAllPaymentHistoryAsync(SieveModel sieveModel)
         {
             await GetCurrentUserAsync(); // auth gate
 
             var query = _context.PaymentHistories.Include(ph => ph.User).AsQueryable();
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(ph => ph.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery
                 .Select(PaymentHistoryProjection)
                 .ToListAsync();
+
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResPaymentHistoryDTO>
             {

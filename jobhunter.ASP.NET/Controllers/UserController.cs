@@ -7,6 +7,7 @@ using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Filters;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Services;
+using Sieve.Models;
 
 namespace jobhunter.ASP.NET.Controllers
 {
@@ -64,9 +65,9 @@ namespace jobhunter.ASP.NET.Controllers
 
         [HttpGet("users")]
         [ApiMessage("fetch all user")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? filter = null)
+        public async Task<IActionResult> GetAllUsers([FromQuery] SieveModel sieveModel)
         {
-            return Ok(await _userService.GetAllUsersAsync(page, size, filter));
+            return Ok(await _userService.GetAllUsersAsync(sieveModel));
         }
 
         [HttpPut("users")]

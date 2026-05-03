@@ -40,7 +40,7 @@ const SearchClient = (props: IProps) => {
 
   useEffect(() => {
     const searchTypeParam = searchParams.get("search_type");
-    const filterParam = searchParams.get("filter");
+    const filterParam = searchParams.get("filters");
     const promptParam = searchParams.get("prompt");
     const locationParam = searchParams.get("location");
 
@@ -55,8 +55,8 @@ const SearchClient = (props: IProps) => {
       if (location.pathname.startsWith("/company"))
         onSearchTypeChange("company");
 
-      const nameMatch = filterParam?.match(/name~'([^']*)'/);
-      const locationMatch = filterParam?.match(/location~'([^']*)'/);
+      const nameMatch = filterParam?.match(/name@=([^,|]+)/);
+      const locationMatch = filterParam?.match(/location@=([^,|]+)/);
       const searchQueryValue = nameMatch ? nameMatch[1] : null;
       const savedLocationValue = locationMatch ? locationMatch[1] : null;
 
@@ -88,7 +88,7 @@ const SearchClient = (props: IProps) => {
           params.set("location", locationValue);
         }
         params.set("page", "1");
-        params.set("size", "2");
+        params.set("pageSize", "2");
 
         navigate(`/job?${params.toString()}`, {
           state: {
@@ -97,9 +97,9 @@ const SearchClient = (props: IProps) => {
         });
       } else {
         let filterParts = [];
-        if (searchQuery) filterParts.push(`name~'${searchQuery}'`);
+        if (searchQuery) filterParts.push(`name@=${searchQuery}`);
         if (locationValue && locationValue !== "tatca")
-          filterParts.push(`location~'${locationValue}'`);
+          filterParts.push(`location@=${locationValue}`);
 
         if (filterParts.length === 0) {
           const targetPath = searchType === "job" ? "/job" : "/company";
@@ -107,7 +107,7 @@ const SearchClient = (props: IProps) => {
           return;
         }
 
-        const query = `filter=${filterParts.join(" and ")}&sort=updatedAt,desc&page=1&size=2`;
+        const query = `filters=${filterParts.join(",")}&sorts=-updatedAt&page=1&pageSize=2`;
         const targetPath =
           searchType === "job" ? `/job?${query}` : `/company?${query}`;
         navigate(targetPath);

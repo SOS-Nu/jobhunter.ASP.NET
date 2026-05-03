@@ -378,7 +378,7 @@ export const callFindJobsByAI = (
   >({
     method: "post",
     // Thêm page và size vào query params
-    url: `/api/v1/gemini/find-jobs?page=${page}&size=${size}`,
+    url: `/api/v1/gemini/find-jobs?page=${page}&pageSize=${size}`,
     data: formData,
     headers: {
       "Content-Type": "multipart/form-data",

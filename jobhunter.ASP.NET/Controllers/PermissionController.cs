@@ -106,9 +106,9 @@ namespace jobhunter.ASP.NET.Controllers
         /// </summary>
         [HttpGet("permissions")]
         [ApiMessage("Fetch permissions")]
-        public async Task<IActionResult> GetPermissions([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? filter = null)
+        public async Task<IActionResult> GetPermissions([FromQuery] Sieve.Models.SieveModel sieveModel)
         {
-            return Ok(await _permissionService.GetPermissionsAsync(page, size, filter));
+            return Ok(await _permissionService.GetPermissionsAsync(sieveModel));
         }
     }
 }

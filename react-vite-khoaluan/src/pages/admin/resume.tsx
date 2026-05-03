@@ -20,7 +20,6 @@ import { Button, Space, Tag, Tooltip, message, notification } from "antd";
 import dayjs from "dayjs";
 import queryString from "query-string";
 import { useRef, useState } from "react";
-import { sfIn } from "spring-filter-query-builder";
 
 const ResumePage = () => {
   const tableRef = useRef<ActionType>(null);
@@ -241,58 +240,51 @@ const ResumePage = () => {
     const clone = { ...params };
 
     // Khởi tạo một mảng để chứa các điều kiện filter
-    const filterParts = [];
+    const filterParts: string[] = [];
 
-    // Xử lý filter theo trạng thái (status)
+    // Xử lý filter theo tên job (với dataIndex lồng nhau)
+    if (clone.job?.name) {
+      filterParts.push(`Company.Name@=${clone.job.name}`);
+      delete clone.job;
+    }
+
     if (clone.status?.length) {
-      filterParts.push(sfIn("status", clone.status).toString());
+      filterParts.push(clone.status.map((item: any) => "status==" + item).join("|"));
       delete clone.status;
     }
 
-    // THÊM LOGIC NÀY: Xử lý filter theo tên job
-    // Khi người dùng nhập vào ô tìm kiếm của cột "Job", ProTable sẽ truyền vào params với key là `job.name`
-    // BẰNG ĐOẠN NÀY
-    // Xử lý filter theo tên job (với dataIndex lồng nhau)
-    if (clone.job?.name) {
-      // Truy cập đúng vào clone.job.name
-      filterParts.push(`job.name~'*${clone.job.name}*'`);
-
-      // Quan trọng: Xóa cả object 'job' khỏi clone để không bị stringify thành [object Object]
-      delete clone.job;
-    }
-    // Kết hợp các điều kiện filter bằng ' and '
+    // Kết hợp các điều kiện filter
     if (filterParts.length > 0) {
-      clone.filter = filterParts.join(" and ");
+      clone.filters = filterParts.join(",");
     }
 
     clone.page = clone.current;
-    clone.size = clone.pageSize;
+    clone.pageSize = clone.pageSize;
 
     delete clone.current;
-    delete clone.pageSize;
 
     let temp = queryString.stringify(clone);
 
     let sortBy = "";
     if (sort && sort.status) {
-      sortBy = `sort=status,${sort.status === "ascend" ? "asc" : "desc"}`;
+      sortBy = `sorts=${sort.status === "ascend" ? "" : "-"}status`;
     }
     // THÊM LOGIC NÀY: Xử lý sort theo điểm CV
     if (sort && sort.score) {
-      sortBy = `sort=score,${sort.score === "ascend" ? "asc" : "desc"}`;
+      sortBy = `sorts=${sort.score === "ascend" ? "" : "-"}score`;
     }
     if (sort && sort.createdAt) {
-      sortBy = `sort=createdAt,${sort.createdAt === "ascend" ? "asc" : "desc"}`;
+      sortBy = `sorts=${sort.createdAt === "ascend" ? "" : "-"}createdAt`;
     }
     if (sort && sort.updatedAt) {
-      sortBy = `sort=updatedAt,${sort.updatedAt === "ascend" ? "asc" : "desc"}`;
+      sortBy = `sorts=${sort.updatedAt === "ascend" ? "" : "-"}updatedAt`;
     }
 
     if (sortBy) {
       temp += `&${sortBy}`;
     } else {
       // Mặc định sort theo updatedAt giảm dần nếu không có sort nào khác
-      temp += "&sort=updatedAt,desc";
+      temp += "&sorts=-updatedAt";
     }
 
     temp += "&populate=job,user";

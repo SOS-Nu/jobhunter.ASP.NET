@@ -6,6 +6,8 @@ using jobhunter.ASP.NET.DTOs.Response;
 using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Models;
+using Sieve.Models;
+using Sieve.Services;
 
 namespace jobhunter.ASP.NET.Services
 {
@@ -13,7 +15,7 @@ namespace jobhunter.ASP.NET.Services
     {
         Task<ResCommentDTO> CreateCommentAsync(ReqCreateCommentDTO commentDTO);
         Task<ResCommentDTO> UpdateCommentAsync(ReqUpdateCommentDTO reqComment);
-        Task<PaginatedResponse<ResCommentDTO>> GetCommentsByCompanyAsync(long companyId, int page, int pageSize);
+        Task<PaginatedResponse<ResCommentDTO>> GetCommentsByCompanyAsync(long companyId, SieveModel sieveModel);
     }
 
     public class CommentService : ICommentService
@@ -21,12 +23,14 @@ namespace jobhunter.ASP.NET.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISieveProcessor _sieveProcessor;
 
-        public CommentService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService)
+        public CommentService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, ISieveProcessor sieveProcessor)
         {
             _context = context;
             _mapper = mapper;
             _currentUserService = currentUserService;
+            _sieveProcessor = sieveProcessor;
         }
 
         public async Task<ResCommentDTO> CreateCommentAsync(ReqCreateCommentDTO commentDTO)
@@ -82,7 +86,7 @@ namespace jobhunter.ASP.NET.Services
             return _mapper.Map<ResCommentDTO>(commentInDb);
         }
 
-        public async Task<PaginatedResponse<ResCommentDTO>> GetCommentsByCompanyAsync(long companyId, int page, int pageSize)
+        public async Task<PaginatedResponse<ResCommentDTO>> GetCommentsByCompanyAsync(long companyId, SieveModel sieveModel)
         {
             if (!await _context.Companies.AnyAsync(c => c.Id == companyId))
             {
@@ -93,14 +97,14 @@ namespace jobhunter.ASP.NET.Services
                 .Include(c => c.User)
                 .Where(c => c.CompanyId == companyId);
 
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(c => c.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
 
             var dtos = _mapper.Map<List<ResCommentDTO>>(items);
+            var page = sieveModel.Page ?? 1;
+            var pageSize = sieveModel.PageSize ?? 10;
 
             return new PaginatedResponse<ResCommentDTO>
             {

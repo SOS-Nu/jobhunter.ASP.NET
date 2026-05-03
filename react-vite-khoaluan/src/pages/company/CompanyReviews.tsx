@@ -59,7 +59,7 @@ const CompanyReviews = ({
     const page = searchParams.get("review_page") || "1";
     const res = await callFetchCommentsByCompany(
       companyId.toString(),
-      `page=${page}&size=5&sort=createdAt,desc`,
+      `page=${page}&pageSize=5&sorts=-createdAt`,
     );
     if (res?.data) {
       setReviews(res.data.result);

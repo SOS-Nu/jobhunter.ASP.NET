@@ -6,6 +6,7 @@ using jobhunter.ASP.NET.Entities;
 using jobhunter.ASP.NET.Filters;
 using jobhunter.ASP.NET.Middleware;
 using jobhunter.ASP.NET.Services;
+using Sieve.Models;
 
 namespace jobhunter.ASP.NET.Controllers
 {
@@ -53,17 +54,17 @@ namespace jobhunter.ASP.NET.Controllers
         [HttpGet("jobs")]
         [AllowAnonymous]
         [ApiMessage("Get job with pagination")]
-        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? filter = null)
+        public async Task<IActionResult> GetAll([FromQuery] SieveModel sieveModel)
         {
-            return Ok(await _jobService.GetAllAsync(page, size, filter));
+            return Ok(await _jobService.GetAllAsync(sieveModel));
         }
 
         [HttpGet("jobs/by-company/{companyId}")]
         [AllowAnonymous]
         [ApiMessage("Fetch jobs by company id")]
-        public async Task<IActionResult> GetByCompany(long companyId, [FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetByCompany(long companyId, [FromQuery] SieveModel sieveModel)
         {
-            return Ok(await _jobService.GetByCompanyAsync(companyId, page, size));
+            return Ok(await _jobService.GetByCompanyAsync(companyId, sieveModel));
         }
 
         [HttpPost("jobs/by-user-company")]

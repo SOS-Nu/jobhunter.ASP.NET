@@ -1,22 +1,22 @@
-import { useEffect, useState, useRef } from "react";
-import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
-import { IJob, IUser } from "@/types/backend";
-import { callFetchJobById } from "@/config/api";
-import { Pagination } from "antd";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import JobCard from "@/components/client/card/job.card";
 import ApplyModal from "@/components/client/modal/apply.modal";
+import SearchClient from "@/components/client/search.client";
+import { callFetchJobById } from "@/config/api";
+import useMediaQuery from "@/hooks/useMediaQuery";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchJob,
   fetchJobsAI,
 } from "@/redux/slice/jobSlide";
-import JobCard from "@/components/client/card/job.card";
-import SearchClient from "@/components/client/search.client";
+import { IJob, IUser } from "@/types/backend";
+import { Pagination } from "antd";
+import bg from "assets/top-bg.svg";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import JobDetailPanel from "./JobDetailPanel";
 import JobFilter from "./JobFilter";
-import useMediaQuery from "@/hooks/useMediaQuery";
-import bg from "assets/top-bg.svg";
 
 dayjs.extend(relativeTime);
 
@@ -69,7 +69,7 @@ const ClientJobPage = () => {
       location.state?.file
     ) {
       const page = parseInt(searchParams.get("page") || "1", 10);
-      const size = parseInt(searchParams.get("size") || "10", 10);
+      const size = parseInt(searchParams.get("pageSize") || "10", 10);
 
       if (searchTypeFromUrl === "ai") {
         const prompt = searchParams.get("prompt");
@@ -117,7 +117,7 @@ const ClientJobPage = () => {
   const handleOnchangePage = (page: number, pageSize: number) => {
     setSearchParams((prev) => {
       prev.set("page", page.toString());
-      prev.set("size", pageSize.toString());
+      prev.set("pageSize", pageSize.toString());
       return prev;
     });
     if (jobListRef.current) {
@@ -142,46 +142,42 @@ const ClientJobPage = () => {
     sortSalary: string;
     sortTime: string;
   }) => {
-    const currentFilter = searchParams.get("filter") || "";
-    let newFilterParts: string[] = [];
+    const currentFilter = searchParams.get("filters") || "";
 
-    // Giữ lại các filter cơ bản (name, location) không đổi
-    const baseNamePart = currentFilter.match(/name\s*~\s*'[^']*'/);
-    if (baseNamePart) {
-      newFilterParts.push(baseNamePart[0]);
-    }
-    const baseLocationPart = currentFilter.match(/location\s*~\s*'[^']*'/);
-    if (baseLocationPart) {
-      newFilterParts.push(baseLocationPart[0]);
-    }
+    const filterParts: string[] = [];
 
-    // Thêm filter lương và level không đổi
-    if (salary.min) newFilterParts.push(`salary >= ${salary.min}`);
-    if (salary.max) newFilterParts.push(`salary <= ${salary.max}`);
+    // Tên và địa điểm từ thanh tìm kiếm
+    const baseNamePart = currentFilter.match(/name@=[^,|]+/);
+    const baseLocationPart = currentFilter.match(/location@=[^,|]+/);
+    if (baseNamePart) filterParts.push(baseNamePart[0]);
+    if (baseLocationPart) filterParts.push(baseLocationPart[0]);
+
+    // Thêm filter lương
+    if (salary.min) filterParts.push(`salary>=${salary.min}`);
+    if (salary.max) filterParts.push(`salary<=${salary.max}`);
 
     if (levels.length > 0) {
-      const levelConditions = levels.map((l) => `level = '${l}'`).join(" or ");
-      newFilterParts.push(
-        levels.length === 1 ? levelConditions : `(${levelConditions})`
-      );
+      filterParts.push(levels.map((l) => `level==${l}`).join("|"));
     }
 
     setSearchParams((prev) => {
-      if (newFilterParts.length > 0) {
-        prev.set("filter", newFilterParts.join(" and "));
+      const resultStr = filterParts.join(",");
+
+      if (resultStr) {
+        prev.set("filters", resultStr);
       } else {
-        prev.delete("filter");
+        prev.delete("filters");
       }
 
       // >>> LOGIC MỚI: Ưu tiên sort lương, nếu không thì dùng sort thời gian <<<
       if (sortSalary) {
         // Nếu có chọn sắp xếp lương
-        prev.set("sort", sortSalary === "asc" ? "salary" : "salary,desc");
+        prev.set("sorts", sortSalary === "asc" ? "salary" : "-salary");
       } else {
         // Nếu không, dùng sắp xếp thời gian (mặc định là mới nhất)
         prev.set(
-          "sort",
-          sortTime === "oldest" ? "updatedAt,asc" : "updatedAt,desc"
+          "sorts",
+          sortTime === "oldest" ? "updatedAt" : "-updatedAt"
         );
       }
 
@@ -222,7 +218,7 @@ const ClientJobPage = () => {
 
         {/* Điều kiện này đã được sửa lại cho đúng ở các bước trước */}
         {(currentSearchType === "job" || currentSearchType === "company") &&
-          searchParams.has("filter") && <JobFilter onFilter={handleFilter} />}
+          searchParams.has("filters") && <JobFilter onFilter={handleFilter} />}
 
         <div className="row g-3" ref={jobListRef}>
           <div className={isMobile ? "col-12" : "col-4"}>

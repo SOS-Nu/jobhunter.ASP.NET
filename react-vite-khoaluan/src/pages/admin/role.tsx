@@ -12,7 +12,6 @@ import { fetchRole } from "@/redux/slice/roleSlide";
 import ModalRole from "@/components/admin/role/modal.role";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
-import { sfLike } from "spring-filter-query-builder";
 import { groupByPermission } from "@/config/utils";
 
 const RolePage = () => {
@@ -39,7 +38,7 @@ const RolePage = () => {
 
   useEffect(() => {
     const init = async () => {
-      const res = await callFetchPermission(`page=1&size=100`);
+      const res = await callFetchPermission(`page=1&pageSize=100`);
       if (res.data?.result) {
         setListPermissions(groupByPermission(res.data?.result));
       }
@@ -174,36 +173,33 @@ const RolePage = () => {
     const clone = { ...params };
     const q: any = {
       page: params.current,
-      size: params.pageSize,
-      filter: "",
+      pageSize: params.pageSize,
     };
 
-    if (clone.name) q.filter = `${sfLike("name", clone.name)}`;
-
-    if (!q.filter) delete q.filter;
+    if (clone.name) q.filters = `name@=${clone.name}`;
 
     let temp = queryString.stringify(q);
 
     let sortBy = "";
     if (sort && sort.name) {
-      sortBy = sort.name === "ascend" ? "sort=name,asc" : "sort=name,desc";
+      sortBy = sort.name === "ascend" ? "sorts=name" : "sorts=-name";
     }
     if (sort && sort.createdAt) {
       sortBy =
         sort.createdAt === "ascend"
-          ? "sort=createdAt,asc"
-          : "sort=createdAt,desc";
+          ? "sorts=createdAt"
+          : "sorts=-createdAt";
     }
     if (sort && sort.updatedAt) {
       sortBy =
         sort.updatedAt === "ascend"
-          ? "sort=updatedAt,asc"
-          : "sort=updatedAt,desc";
+          ? "sorts=updatedAt"
+          : "sorts=-updatedAt";
     }
 
     //mặc định sort theo updatedAt
     if (Object.keys(sortBy).length === 0) {
-      temp = `${temp}&sort=updatedAt,desc`;
+      temp = `${temp}&sorts=-updatedAt`;
     } else {
       temp = `${temp}&${sortBy}`;
     }

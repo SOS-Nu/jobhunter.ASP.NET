@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using jobhunter.ASP.NET.DTOs.Request;
 using jobhunter.ASP.NET.Filters;
 using jobhunter.ASP.NET.Services;
+using Sieve.Models;
 
 namespace jobhunter.ASP.NET.Controllers
 {
@@ -52,9 +53,9 @@ namespace jobhunter.ASP.NET.Controllers
 
         [HttpGet("skills")]
         [ApiMessage("fetch all skills")]
-        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int size = 10)
+        public async Task<IActionResult> GetAll([FromQuery] SieveModel sieveModel)
         {
-            var res = await _skillService.GetAllAsync(page, size);
+            var res = await _skillService.GetAllAsync(sieveModel);
             return Ok(res);
         }
     }
