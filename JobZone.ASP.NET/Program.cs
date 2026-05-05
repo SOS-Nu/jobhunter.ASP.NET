@@ -8,6 +8,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.Extensions.FileProviders;
 using Sieve.Services;
@@ -52,7 +53,12 @@ try
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         // Accept number strings for ID fields (frontend sends "1" for company.id)
         options.JsonSerializerOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
+        // Force ISO 8601 UTC format for DateTime (matching Spring Boot JacksonConfig)
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
     });
+
+
 
     // CRITICAL: Suppress Data Annotations auto-validation on model binding.
     // In Java Spring Boot, @NotBlank/@NotNull on entities only fires when @Valid is 
@@ -210,4 +216,43 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+// ========================
+// JSON CONVERTERS (Matching Spring Boot JacksonConfig)
+// ========================
+public class UtcDateTimeConverter : JsonConverter<DateTime>
+{
+    private const string Format = "yyyy-MM-ddTHH:mm:ss.fffZ";
+
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var date = reader.GetDateTime();
+        return date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(date, DateTimeKind.Utc) : date.ToUniversalTime();
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToUniversalTime().ToString(Format));
+    }
+}
+
+public class UtcNullableDateTimeConverter : JsonConverter<DateTime?>
+{
+    private const string Format = "yyyy-MM-ddTHH:mm:ss.fffZ";
+
+    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null) return null;
+        var date = reader.GetDateTime();
+        return date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(date, DateTimeKind.Utc) : date.ToUniversalTime();
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+    {
+        if (value.HasValue)
+            writer.WriteStringValue(value.Value.ToUniversalTime().ToString(Format));
+        else
+            writer.WriteNullValue();
+    }
 }

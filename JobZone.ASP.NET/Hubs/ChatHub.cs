@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.SignalR;
 using JobZone.ASP.NET.Entities;
 using JobZone.ASP.NET.Services;
 using JobZone.ASP.NET.DTOs.Request;
+using Microsoft.AspNetCore.Authorization;
 
 namespace JobZone.ASP.NET.Hubs
 {
+    [Authorize]
     public class ChatHub : Hub
     {
         private readonly IUserService _userService;
@@ -32,9 +34,11 @@ namespace JobZone.ASP.NET.Hubs
         {
             var sender = await _userService.GetUserByIdAsync(chatMessage.Sender.Id);
             chatMessage.Sender = sender;
+            chatMessage.SenderId = sender.Id;
 
             var receiver = await _userService.GetUserByIdAsync(chatMessage.Receiver.Id);
             chatMessage.Receiver = receiver;
+            chatMessage.ReceiverId = receiver.Id;
 
             var savedMsg = await _chatService.SaveMessageAsync(chatMessage);
 

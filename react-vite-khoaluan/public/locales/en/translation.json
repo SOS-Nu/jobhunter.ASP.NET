@@ -117,7 +117,7 @@
       "googlePlay": "Google Play",
       "appStore": "App Store"
     },
-    "copyright": "JobZone Job opportunities, just a click away! © President SOS Nu {{year}}. All rights reserved."
+    "copyright": "JobZone Job opportunities, just a click away! {{year}}. All rights reserved."
   },
   "heroSection": {
     "exp": "My Skill",

@@ -1,0 +1,143 @@
+package vn.hoidanit.JobZone.controller;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.turkraft.springfilter.boot.Filter;
+
+import jakarta.validation.Valid;
+import vn.hoidanit.JobZone.domain.entity.Job;
+import vn.hoidanit.JobZone.domain.entity.JobBulkCreateDTO;
+import vn.hoidanit.JobZone.domain.request.ReqCreateJobDTO;
+import vn.hoidanit.JobZone.domain.request.ReqUpdateJobDTO;
+import vn.hoidanit.JobZone.domain.response.ResBulkCreateJobDTO;
+import vn.hoidanit.JobZone.domain.response.ResultPaginationDTO;
+import vn.hoidanit.JobZone.domain.response.job.ResCreateJobDTO;
+import vn.hoidanit.JobZone.domain.response.job.ResFetchJobDTO;
+import vn.hoidanit.JobZone.domain.response.job.ResUpdateJobDTO;
+import vn.hoidanit.JobZone.service.JobService;
+import vn.hoidanit.JobZone.util.annotation.ApiMessage;
+import vn.hoidanit.JobZone.util.error.IdInvalidException;
+
+@RestController
+@RequestMapping("/api/v1")
+public class JobController {
+
+    private final JobService jobService;
+
+    public JobController(JobService jobService) {
+        this.jobService = jobService;
+
+    }
+
+    @PostMapping("/jobs")
+    @ApiMessage("Create a job")
+    public ResponseEntity<ResCreateJobDTO> create(@Valid @RequestBody Job job) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(this.jobService.create(job));
+    }
+
+    @PostMapping("/jobs/bulk-create")
+    @ApiMessage("Create bulk list job")
+
+    public ResponseEntity<ResBulkCreateJobDTO> bulkCreateJobs(@Valid @RequestBody List<JobBulkCreateDTO> jobDTOs) {
+        ResBulkCreateJobDTO result = this.jobService.handleBulkCreateJobs(jobDTOs);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    @PutMapping("/jobs")
+    @ApiMessage("Update a job")
+    public ResponseEntity<ResUpdateJobDTO> update(@Valid @RequestBody Job job) throws IdInvalidException {
+        Optional<Job> currentJob = this.jobService.fetchJobById(job.getId());
+        if (!currentJob.isPresent()) {
+            throw new IdInvalidException("Job not found");
+        }
+
+        return ResponseEntity.ok()
+                .body(this.jobService.update(job, currentJob.get()));
+    }
+
+    @DeleteMapping("/jobs/{id}")
+    @ApiMessage("Delete a job by id")
+    public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
+        Optional<Job> currentJob = this.jobService.fetchJobById(id);
+        if (!currentJob.isPresent()) {
+            throw new IdInvalidException("Job not found");
+        }
+        this.jobService.delete(id);
+        return ResponseEntity.ok().body(null);
+    }
+
+    @GetMapping("/jobs/{id}")
+    @ApiMessage("Get a job by id")
+    public ResponseEntity<ResFetchJobDTO> getJob(@PathVariable("id") long id) throws IdInvalidException {
+        // Gọi hàm fetchJobDetail (hàm trả về DTO) thay vì fetchJobById (trả về Entity)
+        ResFetchJobDTO jobDto = this.jobService.fetchJobDetail(id);
+
+        if (jobDto == null) {
+            throw new IdInvalidException("Job với id = " + id + " không tồn tại");
+        }
+
+        return ResponseEntity.ok().body(jobDto);
+    }
+
+    @GetMapping("/jobs")
+    @ApiMessage("Get job with pagination")
+    public ResponseEntity<ResultPaginationDTO> getAllJob(
+            @Filter Specification<Job> spec,
+            Pageable pageable) {
+
+        return ResponseEntity.ok().body(this.jobService.fetchAll(spec, pageable));
+    }
+
+    @GetMapping("/jobs/by-company/{companyId}")
+    @ApiMessage("Fetch jobs by company id")
+    public ResponseEntity<ResultPaginationDTO> fetchJobsByCompany(
+            @PathVariable("companyId") long companyId,
+            @Filter Specification<Job> spec,
+            Pageable pageable) throws IdInvalidException {
+
+        // Kiểm tra company tồn tại
+        if (!jobService.isCompanyExist(companyId)) {
+            throw new IdInvalidException("Công ty với id = " + companyId + " không tồn tại");
+        }
+
+        return ResponseEntity.ok(jobService.fetchJobsByCompany(companyId, spec, pageable));
+    }
+
+    @PostMapping("/jobs/by-user-company")
+    @ApiMessage("Create a job for user's company")
+    public ResponseEntity<ResCreateJobDTO> createForUserCompany(@Valid @RequestBody ReqCreateJobDTO jobDTO)
+            throws IdInvalidException {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(this.jobService.createForUserCompany(jobDTO));
+    }
+
+    @PutMapping("/jobs/by-user-company")
+    @ApiMessage("Update a job for user's company")
+    public ResponseEntity<ResUpdateJobDTO> updateForUserCompany(@Valid @RequestBody ReqUpdateJobDTO jobDTO)
+            throws IdInvalidException {
+        return ResponseEntity.ok()
+                .body(this.jobService.updateForUserCompany(jobDTO));
+    }
+
+    @DeleteMapping("/jobs/by-user-company/{id}")
+    @ApiMessage("Delete a job for user's company")
+    public ResponseEntity<Void> deleteForUserCompany(@PathVariable("id") long id) throws IdInvalidException {
+        this.jobService.deleteForUserCompany(id);
+        return ResponseEntity.ok().body(null);
+    }
+}

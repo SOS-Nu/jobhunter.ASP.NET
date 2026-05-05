@@ -69,12 +69,16 @@ namespace JobZone.ASP.NET.Services
                 throw new IdInvalidException("Cấu hình VNPay không hợp lệ. Vui lòng liên hệ quản trị viên.");
             }
 
+            // Handle IPv6 loopback to match working example format if possible, 
+            // or use standard 127.0.0.1 for sandbox stability.
+            if (ipAddress == "::1") ipAddress = "0:0:0:0:0:0:0:1";
+
             var orderId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
-            long amount = 50000 * 100; // 50,000 VND * 100 (VNPay requires amount * 100)
+            long amount = 50000 * 100; // 50,000 VND * 100
             var orderInfo = $"Thanh toan goi VIP cho {user.Email}";
             var now = DateTime.Now;
 
-            var vnpParams = new SortedDictionary<string, string>
+            var vnpParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 { "vnp_Version", vnpVersion },
                 { "vnp_Command", vnpCommand },
@@ -91,12 +95,15 @@ namespace JobZone.ASP.NET.Services
                 { "vnp_ExpireDate", now.AddMinutes(15).ToString("yyyyMMddHHmmss") }
             };
 
+            // Build hash data from encoded values (matching Java logic)
             var hashData = BuildQueryString(vnpParams);
             var secureHash = HmacSHA512(vnpHashSecret, hashData);
+            
+            // Add hash to params for the final URL
             vnpParams["vnp_SecureHash"] = secureHash;
 
             var paymentUrl = vnpPaymentUrl + "?" + BuildQueryString(vnpParams);
-            _logger.LogInformation("VNPay URL generated successfully for user {Email}, length={Length}", user.Email, paymentUrl.Length);
+            _logger.LogInformation("VNPay URL generated: {Url}", paymentUrl);
             return new ResPaymentUrlDTO { Url = paymentUrl };
         }
 
@@ -106,12 +113,17 @@ namespace JobZone.ASP.NET.Services
 
             var secureHash = queryParams.GetValueOrDefault("vnp_SecureHash") ?? "";
             queryParams.Remove("vnp_SecureHash");
+            queryParams.Remove("vnp_SecureHashType");
 
-            var sorted = new SortedDictionary<string, string>(queryParams);
+            // Use StringComparer.Ordinal to match Java's natural string sorting
+            var sorted = new SortedDictionary<string, string>(queryParams, StringComparer.Ordinal);
             var calculatedHash = HmacSHA512(vnpHashSecret, BuildQueryString(sorted));
 
             if (!calculatedHash.Equals(secureHash, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("VNPay Signature Mismatch. Received: {SecureHash}, Calculated: {CalculatedHash}", secureHash, calculatedHash);
                 return new ResPaymentCallbackDTO { Status = "error", Message = "Chữ ký không hợp lệ" };
+            }
 
             var responseCode = queryParams.GetValueOrDefault("vnp_ResponseCode") ?? "";
             var orderInfo = queryParams.GetValueOrDefault("vnp_OrderInfo") ?? "";
@@ -290,7 +302,16 @@ namespace JobZone.ASP.NET.Services
             foreach (var entry in parameters)
             {
                 if (sb.Length > 0) sb.Append('&');
-                sb.Append(entry.Key).Append('=').Append(HttpUtility.UrlEncode(entry.Value, Encoding.UTF8));
+                var encodedValue = HttpUtility.UrlEncode(entry.Value ?? "", Encoding.UTF8);
+                
+                // VNPay requires UPPERCASE hex escapes (e.g. %3A instead of %3a)
+                var uppercaseEncodedValue = System.Text.RegularExpressions.Regex.Replace(
+                    encodedValue, 
+                    "(%[0-9a-f]{2})", 
+                    m => m.Value.ToUpperInvariant()
+                );
+                
+                sb.Append(entry.Key).Append('=').Append(uppercaseEncodedValue);
             }
             return sb.ToString();
         }
@@ -299,6 +320,8 @@ namespace JobZone.ASP.NET.Services
         {
             using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(key));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+            // Java's Integer.toHexString produces lowercase hex.
+            // Convert.ToHexString produces UPPERCASE, so we must ToLowerInvariant().
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
     }

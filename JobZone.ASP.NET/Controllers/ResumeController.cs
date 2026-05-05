@@ -74,5 +74,13 @@ namespace JobZone.ASP.NET.Controllers
         {
             return Ok(await _resumeService.GetByUserAsync(sieveModel));
         }
+
+        [HttpPost("resumes/notify-user/{id}")]
+        [ApiMessage("Notify user after approved resume")]
+        public async Task<IActionResult> NotifyUserAfterApproved(long id)
+        {
+            await _resumeService.NotifyUserAfterApprovedAsync(id);
+            return Ok(null);
+        }
     }
 }

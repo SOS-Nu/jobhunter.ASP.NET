@@ -8,6 +8,7 @@ namespace JobZone.ASP.NET.Services
     {
         Task SendEmailAsync(string to, string subject, string content, bool isHtml = true);
         Task SendEmailFromTemplateAsync(string to, string subject, string username, object jobsData);
+        Task SendApprovalEmailAsync(string to, string username, string jobName, string companyName);
     }
 
     public class EmailService : IEmailService
@@ -87,6 +88,25 @@ namespace JobZone.ASP.NET.Services
             sb.AppendLine("</body></html>");
 
             await SendEmailAsync(to, subject, sb.ToString(), true);
+        }
+
+        public async Task SendApprovalEmailAsync(string to, string username, string jobName, string companyName)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<!DOCTYPE html><html><body style='font-family: Arial, sans-serif;'>");
+            sb.AppendLine("<div style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>");
+            sb.AppendLine("<h1 style='color: #2c3e50;'>Chúc mừng!</h1>");
+            sb.AppendLine($"<p>Chào <strong>{username}</strong>,</p>");
+            sb.AppendLine($"<p>Chúng tôi rất vui mừng thông báo rằng hồ sơ của bạn cho vị trí <strong>{jobName}</strong> tại <strong>{companyName}</strong> đã được chấp thuận.</p>");
+            sb.AppendLine("<p>Đại diện công ty sẽ sớm liên hệ với bạn qua hệ thống Chat của JobZone để trao đổi về bước tiếp theo.</p>");
+            sb.AppendLine("<p>Chúc bạn có một ngày làm việc hiệu quả!</p>");
+            sb.AppendLine("<br/>");
+            sb.AppendLine("<p>Trân trọng,</p>");
+            sb.AppendLine("<p><strong>JobZone Team</strong></p>");
+            sb.AppendLine("</div>");
+            sb.AppendLine("</body></html>");
+
+            await SendEmailAsync(to, "Chúc mừng! Hồ sơ ứng tuyển của bạn đã được chấp thuận", sb.ToString(), true);
         }
     }
 }

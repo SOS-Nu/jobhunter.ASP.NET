@@ -1,0 +1,81 @@
+package vn.hoidanit.JobZone.domain.response;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import vn.hoidanit.JobZone.domain.entity.Role;
+import vn.hoidanit.JobZone.util.constant.GenderEnum;
+import vn.hoidanit.JobZone.util.constant.ResumeStateEnum;
+
+@Getter
+@Setter
+public class ResLoginDTO {
+    @JsonProperty("access_token")
+    private String accessToken;
+
+    private UserLogin user;
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserLogin {
+        private long id;
+        private String email;
+        private String name;
+        private GenderEnum gender;
+        private String address;
+        private int age;
+        private String avatar;
+        private boolean isPublic;
+        private Role role;
+        private boolean isVip;
+        private LocalDateTime vipExpiryDate;
+        private String mainResume;
+
+        private CompanyUser company;
+
+        @Getter
+        @Setter
+        @AllArgsConstructor
+        @NoArgsConstructor
+        public static class CompanyUser {
+            private long id;
+            private String name;
+            private String description;
+            private String address;
+
+            private String logo;
+
+            private String field;
+            private String website;
+            private String scale;
+            private String country;
+            private int foundingYear;
+            private String location;
+        }
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserGetAccount {
+        private UserLogin user;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserInsideToken {
+        private long id;
+        private String email;
+        private String name;
+    }
+}

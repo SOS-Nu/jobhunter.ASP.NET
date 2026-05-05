@@ -1,0 +1,127 @@
+package vn.hoidanit.JobZone.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import vn.hoidanit.JobZone.domain.entity.ChatMessage;
+import vn.hoidanit.JobZone.domain.entity.User;
+import vn.hoidanit.JobZone.domain.request.ChatNotificationDTO;
+import vn.hoidanit.JobZone.domain.response.ResChatMessageDTO;
+import vn.hoidanit.JobZone.domain.response.ResUserDTO;
+import vn.hoidanit.JobZone.service.ChatMessageService;
+import vn.hoidanit.JobZone.service.UserService;
+import vn.hoidanit.JobZone.util.error.IdInvalidException;
+
+class PingPayload {
+    private String email;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+}
+
+@RestController
+@RequestMapping("/api/v1")
+public class ChatController {
+
+    private final UserService userService;
+    private final ChatMessageService chatMessageService;
+    private final SimpMessagingTemplate messagingTemplate;
+    // private final HeartbeatService heartbeatService; // << INJECT SERVICE
+
+    public ChatController(
+            UserService userService,
+            ChatMessageService chatMessageService,
+            SimpMessagingTemplate messagingTemplate) {
+        this.userService = userService;
+        this.chatMessageService = chatMessageService;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    // update status online/ offline
+    @MessageMapping("/user.addUser") // "/app/user.addUser"
+    @SendTo("/topic/public") // SỬA Ở ĐÂY: Dùng /topic/ cho broadcast
+    public User updateStatus(
+            @Payload User user) {
+        userService.updateStatus(user);
+        return user;
+    }
+
+    @MessageMapping("/user.disconnectUser")
+    @SendTo("/topic/public") // SỬA Ở ĐÂY: Dùng /topic/ cho broadcast
+    public User disconnectUser(
+            @Payload User user) {
+        userService.disconnect(user);
+        return user;
+    }
+
+    // @MessageMapping("/heartbeat.ping")
+    // public void handlePing(@Payload PingPayload payload) {
+    // if (payload != null && payload.getEmail() != null) {
+    // heartbeatService.ping(payload.getEmail());
+    // }
+    // }
+
+    @GetMapping("/users-connected")
+    public ResponseEntity<List<ResUserDTO>> findConnectedUsers(@RequestParam("id") Long id) throws IdInvalidException {
+        // Lời gọi này bây giờ sẽ thực thi logic mới trong UserService
+        List<ResUserDTO> users = userService.findConnectedUsers(id);
+
+        // Logic kiểm tra null có thể không còn cần thiết nếu service luôn trả về một
+        // list (có thể rỗng)
+        if (users == null) {
+            // Hoặc bạn có thể trả về một list rỗng thay vì ném exception
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+
+        return ResponseEntity.ok().body(users);
+    }
+
+    @MessageMapping("/chat")
+    public void processMessage(@Payload ChatMessage chatMessage) {
+
+        User sender = this.userService.findUserById(chatMessage.getSender().getId());
+        chatMessage.setSender(sender);
+
+        User receiver = this.userService.findUserById(chatMessage.getReceiver().getId());
+        chatMessage.setReceiver(receiver);
+
+        ChatMessage savedMsg = chatMessageService.save(chatMessage);
+
+        ChatNotificationDTO chatNotification = new ChatNotificationDTO();
+        chatNotification.setId(savedMsg.getId());
+        chatNotification.setContent(savedMsg.getContent());
+        chatNotification.setReceiverId(savedMsg.getReceiver().getId());
+        chatNotification.setSenderId(savedMsg.getSender().getId());
+        chatNotification.setTimeStamp(savedMsg.getTimeStamp());
+
+        messagingTemplate.convertAndSendToUser(
+                chatMessage.getReceiver().getEmail(),
+                "/queue/messages",
+                chatNotification);
+    }
+
+    @GetMapping("/messages/{senderId}/{recipientId}")
+    public ResponseEntity<List<ResChatMessageDTO>> findChatMessages(
+            @PathVariable("senderId") Long senderId,
+            @PathVariable("recipientId") Long recipientId) {
+        List<ResChatMessageDTO> chatList = chatMessageService.findChatMessages(senderId, recipientId);
+
+        return ResponseEntity.ok().body(chatList);
+    }
+
+}

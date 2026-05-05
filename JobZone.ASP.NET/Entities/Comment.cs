@@ -16,7 +16,7 @@ namespace JobZone.ASP.NET.Entities
         public long Id { get; set; }
 
         [Column("comment", TypeName = "NVARCHAR(MAX)")]
-        public string? Content { get; set; }
+        public string? CommentContent { get; set; }
 
         [Range(1, 5, ErrorMessage = "Điểm đánh giá phải từ 1 đến 5")]
         [Column("rating")]

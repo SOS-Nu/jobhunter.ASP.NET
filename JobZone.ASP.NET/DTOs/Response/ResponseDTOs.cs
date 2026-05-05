@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using JobZone.ASP.NET.Enums;
+using JobZone.ASP.NET.Entities;
 
 namespace JobZone.ASP.NET.DTOs.Response
 {
@@ -82,6 +83,42 @@ namespace JobZone.ASP.NET.DTOs.Response
     public class UserGetAccountDTO
     {
         public UserLoginDTO? User { get; set; }
+    }
+
+    public class ResChangePasswordDTO
+    {
+        public ResLoginDTO LoginDto { get; set; } = null!;
+        public List<ResSessionDTO> AllSessions { get; set; } = new();
+        public string CurrentJti { get; set; } = null!;
+
+        public ResChangePasswordDTO() { }
+        public ResChangePasswordDTO(ResLoginDTO loginDto, List<ResSessionDTO> allSessions, string currentJti)
+        {
+            LoginDto = loginDto;
+            AllSessions = allSessions;
+            CurrentJti = currentJti;
+        }
+    }
+
+    public class ResSessionDTO
+    {
+        public long Id { get; set; }
+        public string IpAddress { get; set; } = null!;
+        public string UserAgent { get; set; } = null!;
+        public DateTime CreatedAt { get; set; }
+        public DateTime LastUsedAt { get; set; }
+        public bool Current { get; set; }
+
+        public ResSessionDTO() { }
+        public ResSessionDTO(UserSession s, string? currentJti)
+        {
+            Id = s.Id;
+            IpAddress = s.IpAddress ?? "unknown";
+            UserAgent = s.UserAgent ?? "unknown";
+            CreatedAt = s.CreatedAt;
+            LastUsedAt = s.LastUsedAt; 
+            Current = s.RefreshTokenJti == currentJti;
+        }
     }
 
     // ========================

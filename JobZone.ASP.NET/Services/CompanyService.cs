@@ -110,6 +110,12 @@ namespace JobZone.ASP.NET.Services
             dto.TotalComments = comments.Count;
             dto.AverageRating = comments.Count > 0 ? Math.Round(comments.Average(c => c.Rating), 1) : 0;
 
+            var hrUser = await _context.Users.FirstOrDefaultAsync(u => u.CompanyId == id);
+            if (hrUser != null)
+            {
+                dto.HrCompany = new HrCompanyDTO { Id = hrUser.Id, Name = hrUser.Name, Email = hrUser.Email };
+            }
+
             // Check if current user has an approved resume for this company
             var email = _currentUserService.GetCurrentUserEmail();
             if (!string.IsNullOrEmpty(email))

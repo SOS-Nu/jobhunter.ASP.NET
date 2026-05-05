@@ -170,7 +170,25 @@ namespace JobZone.ASP.NET.Services
 
         public async Task<PaginatedResponse<ResFetchJobDTO>> GetByCompanyAsync(long companyId, SieveModel sieveModel)
         {
-            var query = _context.Jobs.Include(j => j.Company).Include(j => j.Skills).Where(j => j.CompanyId == companyId && j.Active).AsQueryable();
+            var query = _context.Jobs.Include(j => j.Company).Include(j => j.Skills).Where(j => j.CompanyId == companyId).AsQueryable();
+
+            // Check if user belongs to this company (matching Java: security-based filtering)
+            var email = _currentUserService.GetCurrentUserEmail();
+            bool canSeeInactive = false;
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+                if (user != null && (user.CompanyId == companyId || user.Role?.Name == "SUPER_ADMIN"))
+                {
+                    canSeeInactive = true;
+                }
+            }
+
+            if (!canSeeInactive)
+            {
+                query = query.Where(j => j.Active);
+            }
             
             // Apply Sieve filtering and sorting
             query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);

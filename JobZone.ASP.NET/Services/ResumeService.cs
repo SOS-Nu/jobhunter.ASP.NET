@@ -1,5 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using JobZone.ASP.NET.Hubs;
 using JobZone.ASP.NET.Data;
 using JobZone.ASP.NET.DTOs.Response;
 using JobZone.ASP.NET.Entities;
@@ -19,6 +21,7 @@ namespace JobZone.ASP.NET.Services
         Task<ResFetchResumeDTO?> GetByIdAsync(long id);
         Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(SieveModel sieveModel);
         Task<PaginatedResponse<ResFetchResumeDTO>> GetByUserAsync(SieveModel sieveModel);
+        Task NotifyUserAfterApprovedAsync(long id);
     }
 
     public class ResumeService : IResumeService
@@ -28,10 +31,15 @@ namespace JobZone.ASP.NET.Services
         private readonly ICurrentUserService _currentUserService;
         private readonly IUserService _userService;
         private readonly ISieveProcessor _sieveProcessor;
+        private readonly IEmailService _emailService;
+        private readonly IChatService _chatService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ResumeService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserService userService, ISieveProcessor sieveProcessor)
+        public ResumeService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserService userService, ISieveProcessor sieveProcessor,
+            IEmailService emailService, IChatService chatService, IHubContext<ChatHub> hubContext)
         {
             _context = context; _mapper = mapper; _currentUserService = currentUserService; _userService = userService; _sieveProcessor = sieveProcessor;
+            _emailService = emailService; _chatService = chatService; _hubContext = hubContext;
         }
 
         public async Task<ResCreateResumeDTO> CreateAsync(Resume resume)
@@ -147,6 +155,58 @@ namespace JobZone.ASP.NET.Services
             var page = sieveModel.Page ?? 1;
             var pageSize = sieveModel.PageSize ?? 10;
             return new PaginatedResponse<ResFetchResumeDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize, Pages = (int)Math.Ceiling((double)total / pageSize), Total = total }, Result = dtos };
+        }
+
+        public async Task NotifyUserAfterApprovedAsync(long id)
+        {
+            var resume = await _context.Resumes
+                .Include(r => r.User)
+                .Include(r => r.Job)
+                .ThenInclude(j => j!.Company)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (resume == null || resume.User == null || resume.Job == null)
+                throw new IdInvalidException($"Không tìm thấy resume với id={id} hoặc dữ liệu liên quan bị thiếu");
+
+            if (resume.Status != ResumeStateEnum.APPROVED)
+                throw new IdInvalidException("Resume phải ở trạng thái APPROVED mới có thể gửi thông báo");
+
+            // 1. Send Email
+            await _emailService.SendApprovalEmailAsync(
+                resume.User.Email,
+                resume.User.Name,
+                resume.Job.Name,
+                resume.Job.Company?.Name ?? "Công ty"
+            );
+
+            // 2. Send Chat Message via SignalR
+            var hrEmail = _currentUserService.GetCurrentUserEmail() ?? "";
+            var hr = await _context.Users.FirstOrDefaultAsync(u => u.Email == hrEmail);
+            
+            if (hr != null)
+            {
+                var messageContent = $"Chúc mừng {resume.User.Name}! Hồ sơ ứng tuyển của bạn cho vị trí {resume.Job.Name} đã được chấp thuận. Chúng tôi sẽ sớm liên hệ với bạn.";
+                
+                var chatMessage = new ChatMessage
+                {
+                    Content = messageContent,
+                    SenderId = hr.Id,
+                    ReceiverId = resume.UserId!.Value,
+                    TimeStamp = DateTime.UtcNow
+                };
+
+                var savedMsg = await _chatService.SaveMessageAsync(chatMessage);
+
+                // Broadcast via SignalR (mimicking ChatHub.SendMessage logic)
+                await _hubContext.Clients.User(resume.User.Email).SendAsync("ReceiveMessage", new JobZone.ASP.NET.DTOs.Request.ChatNotificationDTO
+                {
+                    Id = savedMsg.Id,
+                    Content = savedMsg.Content,
+                    ReceiverId = savedMsg.ReceiverId,
+                    SenderId = savedMsg.SenderId,
+                    TimeStamp = savedMsg.TimeStamp ?? DateTime.UtcNow
+                });
+            }
         }
     }
 }

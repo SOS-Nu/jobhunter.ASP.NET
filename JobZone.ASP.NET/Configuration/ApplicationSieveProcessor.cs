@@ -268,6 +268,16 @@ namespace JobZone.ASP.NET.Configuration
                 .CanFilter()
                 .CanSort();
 
+            mapper.Property<Resume>(r => r.Job.Name)
+                .CanFilter()
+                .CanSort()
+                .HasName("Job.Name");
+
+            mapper.Property<Resume>(r => r.Job.Company.Name)
+                .CanFilter()
+                .CanSort()
+                .HasName("Company.Name");
+
             // ==================== PaymentHistory ====================
             mapper.Property<PaymentHistory>(p => p.OrderId)
                 .CanFilter()

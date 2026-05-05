@@ -1,0 +1,284 @@
+package vn.hoidanit.JobZone.service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.turkraft.springfilter.builder.FilterBuilder;
+import com.turkraft.springfilter.converter.FilterSpecification;
+import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import com.turkraft.springfilter.parser.FilterParser;
+import com.turkraft.springfilter.parser.node.FilterNode;
+
+import vn.hoidanit.jobhunter.domain.entity.Resume;
+import vn.hoidanit.jobhunter.domain.response.ResultPaginationDTO;
+import vn.hoidanit.jobhunter.domain.response.resume.ResCreateResumeDTO;
+import vn.hoidanit.jobhunter.domain.response.resume.ResFetchResumeDTO;
+import vn.hoidanit.jobhunter.domain.response.resume.ResUpdateResumeDTO;
+import vn.hoidanit.jobhunter.repository.JobRepository;
+import vn.hoidanit.jobhunter.repository.ResumeRepository;
+import vn.hoidanit.jobhunter.repository.UserRepository;
+import vn.hoidanit.jobhunter.util.constant.ResumeStateEnum;
+import vn.hoidanit.jobhunter.util.error.IdInvalidException;
+
+@Service
+public class ResumeService {
+
+    @Autowired
+    FilterBuilder fb;
+
+    @Autowired
+    private FilterParser filterParser;
+
+    @Autowired
+    private FilterSpecificationConverter filterSpecificationConverter;
+
+    private final ResumeRepository resumeRepository;
+    private final UserRepository userRepository;
+    private final JobRepository jobRepository;
+    private final UserService userService;
+    private final GeminiService geminiService;
+    private final FileService fileService;
+
+    public ResumeService(
+            ResumeRepository resumeRepository,
+            UserRepository userRepository,
+            UserService userService, JobRepository jobRepository, GeminiService geminiService,
+            FileService fileService) {
+        this.resumeRepository = resumeRepository;
+        this.userRepository = userRepository;
+        this.jobRepository = jobRepository;
+        this.userService = userService;
+        this.geminiService = geminiService;
+        this.fileService = fileService;
+
+    }
+
+    public Optional<Resume> fetchById(long id) {
+        return this.resumeRepository.findById(id);
+    }
+
+    public boolean checkResumeExistByUserAndJob(Resume resume) {
+        // check user by id
+        if (resume.getUser() == null)
+            return false;
+        Optional<User> userOptional = this.userRepository.findById(resume.getUser().getId());
+        if (userOptional.isEmpty())
+            return false;
+
+        // check job by id
+        if (resume.getJob() == null)
+            return false;
+        Optional<Job> jobOptional = this.jobRepository.findById(resume.getJob().getId());
+        if (jobOptional.isEmpty())
+            return false;
+
+        return true;
+    }
+
+    @Transactional
+    public ResCreateResumeDTO create(Resume resume) throws IdInvalidException {
+        // Lấy thông tin user đang đăng nhập
+        String email = SecurityUtil.getCurrentUserLogin().orElseThrow(
+                () -> new IdInvalidException("Bạn cần đăng nhập để nộp CV"));
+
+        User currentUser = this.userService.fetchUserByEmail(email);
+        if (currentUser == null) {
+            throw new IdInvalidException("Không tìm thấy người dùng với email: " + email);
+        }
+
+        // Lấy thông tin Job đầy đủ
+        Job job = this.jobRepository.findById(resume.getJob().getId())
+                .orElseThrow(() -> new IdInvalidException("Job với id=" + resume.getJob().getId() + " không tồn tại"));
+
+        Optional<Resume> resResume = this.resumeRepository.findByUserIdAndJobId(currentUser.getId(),
+                job.getId());
+        // KIỂM TRA ĐÃ APPLY HAY CHƯA
+        // Sử dụng phương thức mới trong repository để kiểm tra
+        if (resResume.isPresent() && resResume.get().getId() != 0) {
+            // throw new IdInvalidException("Bạn đã apply vào job này rồi");
+            this.delete(resResume.get().getId());
+        }
+        // >>> KẾT THÚC LOGIC MỚI <<<
+
+        // Kiểm tra lượt submit CV
+        if (!userService.canSubmitCv(email)) {
+            throw new IdInvalidException("Bạn đã hết lượt nộp CV trong tháng này. Hãy nâng cấp lên VIP để nộp thêm!");
+        }
+
+        // Gán lại User và Job đầy đủ cho đối tượng resume để đảm bảo tính toàn vẹn
+        resume.setUser(currentUser);
+        resume.setJob(job);
+
+        // LOGIC CHẤM ĐIỂM (giữ nguyên)
+        int score = 0;
+        String cvFileName = resume.getUrl();
+        System.out.println("Bắt đầu chấm điểm cho CV: " + cvFileName);
+
+        if (cvFileName != null && !cvFileName.isEmpty()) {
+            try {
+                byte[] cvFileBytes = this.fileService.readFileAsBytes(cvFileName, "resume");
+                if (cvFileBytes != null) {
+                    System.out.println("Đã đọc file CV thành công. Đang gửi tới Gemini để chấm điểm...");
+                    score = this.geminiService.scoreCvAgainstJob(job, cvFileBytes, cvFileName);
+                    System.out.println("Gemini đã trả về điểm số: " + score);
+                } else {
+                    System.out.println("Không tìm thấy file CV '" + cvFileName + "' trong thư mục storage/resume.");
+                }
+            } catch (Exception e) {
+                System.err.println(
+                        "Lỗi nghiêm trọng khi chấm điểm CV bằng Gemini cho job " + job.getId() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        resume.setScore(score);
+        resume.setStatus(ResumeStateEnum.REVIEWING);
+
+        // Lưu resume với điểm số vào DB
+        Resume savedResume = this.resumeRepository.save(resume);
+        System.out
+                .println("Đã lưu Resume vào DB với id=" + savedResume.getId() + " và score=" + savedResume.getScore());
+
+        userService.incrementCvSubmission(email);
+
+        // Trả về DTO (giữ nguyên)
+        ResCreateResumeDTO res = new ResCreateResumeDTO();
+        res.setId(savedResume.getId());
+        res.setCoverLetter(savedResume.getCoverLetter());
+        res.setCreatedBy(savedResume.getCreatedBy());
+        res.setCreatedAt(savedResume.getCreatedAt());
+
+        return res;
+    }
+
+    @Transactional // Sử dụng Transactional để đảm bảo tính toàn vẹn dữ liệu
+    public ResUpdateResumeDTO update(Resume resume) {
+        // Lấy thông tin job liên quan đến resume này
+        Job jobToUpdate = resume.getJob();
+        if (jobToUpdate != null) {
+            // Kiểm tra nếu trạng thái của resume được cập nhật là "APPROVED"
+            if (resume.getStatus() == ResumeStateEnum.APPROVED) {
+                int currentQuantity = jobToUpdate.getQuantity();
+                if (currentQuantity > 0) {
+                    // Giảm quantity đi 1
+                    jobToUpdate.setQuantity(currentQuantity - 1);
+                    // Nếu quantity về 0, set active = false
+                    if (jobToUpdate.getQuantity() == 0) {
+                        jobToUpdate.setActive(false);
+                    }
+                    // Lưu lại thay đổi của job
+                    this.jobRepository.save(jobToUpdate);
+                }
+            }
+        }
+
+        // Lưu lại resume
+        resume = this.resumeRepository.save(resume);
+
+        // Tạo response DTO
+        ResUpdateResumeDTO res = new ResUpdateResumeDTO();
+        res.setUpdatedAt(resume.getUpdatedAt());
+        res.setUpdatedBy(resume.getUpdatedBy());
+        return res;
+    }
+
+    public void delete(long id) {
+        this.resumeRepository.deleteById(id);
+    }
+
+    // Đặt tại: vn.hoidanit.JobZone.service.ResumeService
+    public ResFetchResumeDTO getResume(Resume resume) {
+        ResFetchResumeDTO res = new ResFetchResumeDTO();
+        res.setId(resume.getId());
+        // Bỏ dòng res.setEmail(resume.getEmail()); ở đây
+
+        res.setUrl(resume.getUrl());
+        res.setStatus(resume.getStatus());
+        res.setCreatedAt(resume.getCreatedAt());
+        res.setCreatedBy(resume.getCreatedBy());
+        res.setUpdatedAt(resume.getUpdatedAt());
+        res.setUpdatedBy(resume.getUpdatedBy());
+        res.setCoverLetter(resume.getCoverLetter());
+        res.setScore(resume.getScore());
+
+        if (resume.getJob() != null) {
+            res.setCompanyName(resume.getJob().getCompany().getName());
+        }
+
+        User resumeOwner = resume.getUser(); // Lấy thông tin người đã nộp CV
+
+        // LOGIC MỚI: Chỉ hiện email nếu người dùng đó là public
+        if (resumeOwner != null && resumeOwner.isPublic()) {
+            res.setEmail(resume.getEmail());
+        } else {
+            // Nếu isPublic là false (hoặc user không tồn tại), không trả về email
+            res.setEmail(null);
+        }
+
+        res.setUser(new ResFetchResumeDTO.UserResume(resumeOwner.getId(), resumeOwner.getName()));
+        res.setJob(new ResFetchResumeDTO.JobResume(resume.getJob().getId(), resume.getJob().getName()));
+
+        return res;
+    }
+
+    public ResultPaginationDTO fetchAllResume(Specification<Resume> spec, Pageable pageable) {
+        Page<Resume> pageUser = this.resumeRepository.findAll(spec, pageable);
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+
+        mt.setPages(pageUser.getTotalPages());
+        mt.setTotal(pageUser.getTotalElements());
+
+        rs.setMeta(mt);
+
+        // remove sensitive data
+        List<ResFetchResumeDTO> listResume = pageUser.getContent()
+                .stream().map(item -> this.getResume(item))
+                .collect(Collectors.toList());
+
+        rs.setResult(listResume);
+
+        return rs;
+    }
+
+    public ResultPaginationDTO fetchResumeByUser(Pageable pageable) {
+        // query builder
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "";
+        FilterNode node = filterParser.parse("email='" + email + "'");
+        FilterSpecification<Resume> spec = filterSpecificationConverter.convert(node);
+        Page<Resume> pageResume = this.resumeRepository.findAll(spec, pageable);
+
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+
+        mt.setPages(pageResume.getTotalPages());
+        mt.setTotal(pageResume.getTotalElements());
+
+        rs.setMeta(mt);
+
+        // remove sensitive data
+        List<ResFetchResumeDTO> listResume = pageResume.getContent()
+                .stream().map(item -> this.getResume(item))
+                .collect(Collectors.toList());
+
+        rs.setResult(listResume);
+
+        return rs;
+    }
+}

@@ -52,7 +52,7 @@ namespace JobZone.ASP.NET.Services
 
             var comment = new Comment
             {
-                Content = commentDTO.Comment,
+                CommentContent = commentDTO.Comment,
                 Rating = commentDTO.Rating,
                 CompanyId = company.Id,
                 Company = company,
@@ -79,7 +79,7 @@ namespace JobZone.ASP.NET.Services
                 throw new IdInvalidException("Bạn không có quyền chỉnh sửa bình luận này");
             }
 
-            commentInDb.Content = reqComment.Comment;
+            commentInDb.CommentContent = reqComment.Comment;
             commentInDb.Rating = reqComment.Rating;
 
             await _context.SaveChangesAsync();

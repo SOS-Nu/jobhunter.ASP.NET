@@ -43,6 +43,7 @@ namespace JobZone.ASP.NET.Services
         Task ChangePasswordAsync(string email, string newPassword);
         bool CanSubmitCv(string email);
         Task IncrementCvSubmissionAsync(string email);
+        Task ResetVipAndCvCountsAsync();
     }
 
     public class UserService : IUserService
@@ -597,6 +598,7 @@ namespace JobZone.ASP.NET.Services
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
             if (user == null) return false;
 
+            // Immediate check for VIP expiry when user attempts to submit
             if (user.IsVip && user.VipExpiryDate.HasValue && user.VipExpiryDate.Value < DateTime.UtcNow)
             {
                 user.IsVip = false;
@@ -604,8 +606,36 @@ namespace JobZone.ASP.NET.Services
                 _context.SaveChanges();
             }
 
-            var maxSubmissions = user.IsVip ? 20 : 10;
+            // Normal user: 5, VIP user: 30 (as requested)
+            var maxSubmissions = user.IsVip ? 30 : 5;
             return user.CvSubmissionCount < maxSubmissions;
+        }
+
+        public async Task ResetVipAndCvCountsAsync()
+        {
+            var now = DateTime.UtcNow;
+            
+            _logger.LogInformation("Running background job: Checking VIP expiry and monthly CV reset...");
+
+            // 1. Deactivate expired VIPs
+            var expiredVips = await _context.Users
+                .Where(u => u.IsVip && u.VipExpiryDate < now)
+                .ToListAsync();
+            
+            foreach (var user in expiredVips)
+            {
+                user.IsVip = false;
+            }
+
+            // 2. Reset CV counts on the 1st of the month
+            if (now.Day == 1)
+            {
+                _logger.LogInformation("1st of the month detected. Resetting all CV submission counts.");
+                await _context.Database.ExecuteSqlRawAsync("UPDATE Users SET CvSubmissionCount = 0");
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Background job completed.");
         }
 
         public async Task IncrementCvSubmissionAsync(string email)

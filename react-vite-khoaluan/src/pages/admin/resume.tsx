@@ -178,7 +178,7 @@ const ResumePage = () => {
           </>
         );
       },
-      hideInSearch: false,
+      hideInSearch: true,
     },
     {
       title: "UpdatedAt",
@@ -244,7 +244,7 @@ const ResumePage = () => {
 
     // Xử lý filter theo tên job (với dataIndex lồng nhau)
     if (clone.job?.name) {
-      filterParts.push(`Company.Name@=${clone.job.name}`);
+      filterParts.push(`Job.Name@=${clone.job.name}`);
       delete clone.job;
     }
 

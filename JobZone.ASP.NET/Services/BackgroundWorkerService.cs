@@ -22,7 +22,7 @@ namespace JobZone.ASP.NET.Services
             {
                 // Run daily tasks at 1 AM
                 var now = DateTime.Now;
-                var nextRun = new DateTime(now.Year, now.Month, now.Day, 1, 0, 0);
+                var nextRun = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 if (now > nextRun)
                 {
                     nextRun = nextRun.AddDays(1);
@@ -47,9 +47,10 @@ namespace JobZone.ASP.NET.Services
             try
             {
                 using var scope = _serviceProvider.CreateScope();
+                var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                // 1. Session Cleanup
+                // 1. Session Cleanup (Keep it here or move to UserService)
                 var expiredSessions = await context.UserSessions
                     .Where(s => s.ExpiresAt < DateTime.UtcNow)
                     .ToListAsync(stoppingToken);
@@ -58,34 +59,11 @@ namespace JobZone.ASP.NET.Services
                 {
                     context.UserSessions.RemoveRange(expiredSessions);
                     _logger.LogInformation("Cleaned up {Count} expired sessions.", expiredSessions.Count);
+                    await context.SaveChangesAsync(stoppingToken);
                 }
 
-                // 2. VIP Expiry and CV Submission count reset (run on the 1st of month)
-                if (DateTime.Now.Day == 1)
-                {
-                    var users = await context.Users.ToListAsync(stoppingToken);
-                    int resetCount = 0;
-                    int expiredVipCount = 0;
-
-                    foreach (var user in users)
-                    {
-                        if (user.CvSubmissionCount > 0)
-                        {
-                            user.CvSubmissionCount = 0;
-                            resetCount++;
-                        }
-
-                        if (user.IsVip && user.VipExpiryDate.HasValue && user.VipExpiryDate.Value < DateTime.UtcNow)
-                        {
-                            user.IsVip = false;
-                            user.VipExpiryDate = null;
-                            expiredVipCount++;
-                        }
-                    }
-                    _logger.LogInformation("Reset CV counts for {ResetCount} users. Deactivated {ExpiredCount} expired VIPs.", resetCount, expiredVipCount);
-                }
-
-                await context.SaveChangesAsync(stoppingToken);
+                // 2. VIP Expiry and CV Submission count reset (Logic moved to UserService)
+                await userService.ResetVipAndCvCountsAsync();
             }
             catch (Exception ex)
             {

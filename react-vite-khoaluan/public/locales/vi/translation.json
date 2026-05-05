@@ -112,7 +112,7 @@
       "googlePlay": "Google Play",
       "appStore": "App Store"
     },
-    "copyright": "JobZone Cơ hội việc làm, chỉ một cú click! © President SOS Nu {{year}}. Đã đăng ký bản quyền."
+    "copyright": "JobZone Cơ hội việc làm, chỉ một cú click! {{year}}. Đã đăng ký bản quyền."
   },
   "heroSection": {
     "exp": "Kinh nghiệm",

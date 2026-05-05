@@ -231,7 +231,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, setSearchTerm }) => {
                 src={logojobhunter}
                 alt="Logo Job Hunter"
                 className="react-icon"
-                title="SOS Nu"
+                title="JobZone"
               />
               &nbsp; &nbsp;
               <h3 style={{ paddingTop: 5, paddingBottom: 5 }}>

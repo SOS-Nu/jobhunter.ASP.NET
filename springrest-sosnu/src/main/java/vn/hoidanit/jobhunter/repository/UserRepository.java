@@ -1,0 +1,127 @@
+package vn.hoidanit.JobZone.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import vn.hoidanit.JobZone.domain.entity.Company;
+import vn.hoidanit.JobZone.domain.entity.User;
+import vn.hoidanit.JobZone.domain.entity.UserSession;
+import vn.hoidanit.JobZone.util.constant.UserStatusEnum;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
+        User findByEmail(String Email);
+
+        boolean existsByEmail(String email);
+
+        List<User> findByCompany(Company company);
+
+        List<User> findByIdIn(List<Long> id);
+
+        List<User> findAllByStatusAndIdNot(UserStatusEnum status, Long id);
+
+        List<User> findByStatus(UserStatusEnum status);
+
+        /**
+         * Lọc sơ bộ ứng viên bằng FTS, tìm kiếm trên cả thông tin user và online
+         * resume.
+         * Chỉ trả về các user có isPublic = true.
+         */
+        // @Query(value = "SELECT u.* FROM users u " +
+        // "LEFT JOIN online_resumes o ON u.online_resume_id = o.id " +
+        // // THÊM ĐIỀU KIỆN is_vip = TRUE VÀ BỌC NGOẶC CHO MATCH
+        // "WHERE u.is_vip = TRUE AND (" +
+        // " MATCH(u.name, u.address) AGAINST(:keywords IN NATURAL LANGUAGE MODE) OR " +
+        // " MATCH(o.title, o.full_name, o.summary, o.certifications, o.educations,
+        // o.languages) AGAINST(:keywords IN NATURAL LANGUAGE MODE)"
+        // +
+        // ") " + // Đóng ngoặc ở đây
+        // "LIMIT :limit", nativeQuery = true)
+        // List<User> preFilterCandidatesByKeywords(
+        // @Param("keywords") String keywords,
+        // @Param("limit") int limit);
+
+        @Query(value = "SELECT u.* FROM users u " +
+                        "LEFT JOIN online_resumes o ON u.online_resume_id = o.id " +
+                        "WHERE (" + // <<< Bắt đầu trực tiếp với điều kiện MATCH
+                        "  MATCH(u.name, u.address) AGAINST(:keywords IN NATURAL LANGUAGE MODE) OR " +
+                        "  MATCH(o.title, o.full_name, o.summary, o.certifications, o.educations, o.languages) AGAINST(:keywords IN NATURAL LANGUAGE MODE)"
+                        +
+                        ") " +
+                        "LIMIT :limit", nativeQuery = true)
+        List<User> preFilterCandidatesByKeywords(
+                        @Param("keywords") String keywords,
+                        @Param("limit") int limit);
+
+        /**
+         * Ghi đè phương thức findAll có sẵn để áp dụng Entity Graph.
+         * Khi phương thức này được gọi trong service, nó sẽ sử dụng graph
+         * 'graph.user.details'
+         * để fetch tất cả các quan hệ cần thiết trong một câu query duy nhất,
+         * giải quyết triệt để vấn đề N+1.
+         */
+        @Override
+        @EntityGraph(attributePaths = { "role", "company", "onlineResume" })
+        Page<User> findAll(Specification<User> spec, Pageable pageable);
+
+        // PHƯƠNG THỨC MỚI: Tìm user theo danh sách ID và fetch sẵn company, role
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.company LEFT JOIN FETCH u.role WHERE u.id IN :ids")
+        List<User> findByIdInWithCompanyAndRole(@Param("ids") List<Long> ids);
+
+        // GHI ĐÈ PHƯƠNG THỨC findAllById ĐỂ ÁP DỤNG ENTITY GRAPH
+        @Override
+        @EntityGraph(value = "graph.user.details")
+        List<User> findAllById(Iterable<Long> ids);
+
+        // THAY BẰNG PHƯƠNG THỨC MỚI NÀY
+        // Phương thức này sẽ dùng graph 'graph.user.details' mà bạn đã định nghĩa trong
+        // User.java
+        // Graph này đã được cấu hình cẩn thận để chỉ fetch 'resumes' (1 collection),
+        // tránh lỗi.
+        @EntityGraph(value = "graph.user.details")
+        Optional<User> findOneById(long id);
+
+        @Query("SELECT DISTINCT u FROM User u " +
+                        "LEFT JOIN FETCH u.workExperiences " +
+                        "LEFT JOIN FETCH u.resumes")
+        List<User> findAllWithDetails();
+
+        /**
+         * Lấy user đầu tiên (dựa trên ID nhỏ nhất) cho mỗi công ty trong danh sách.
+         * Dùng native query với window function để đạt hiệu suất cao nhất.
+         */
+        @Query(value = "WITH RankedUsers AS (" +
+                        "  SELECT u.*, ROW_NUMBER() OVER(PARTITION BY u.company_id ORDER BY u.id ASC) as rn " +
+                        "  FROM users u WHERE u.company_id IN :companyIds" +
+                        ") " +
+                        "SELECT * FROM RankedUsers WHERE rn = 1", nativeQuery = true)
+        List<User> findFirstUserForCompanies(@Param("companyIds") List<Long> companyIds);
+
+        @EntityGraph(attributePaths = { "role", "company", "onlineResume" })
+        Optional<User> findWithRoleCompanyAndOnlineResumeById(long id);
+
+        @Query("select u from User u " +
+                        "left join fetch u.role r " +
+                        "left join fetch r.permissions " +
+                        "where u.email = :email")
+        Optional<User> findOneWithRoleAndPermissionsByEmail(@Param("email") String email);
+
+        @org.springframework.data.jpa.repository.Modifying
+        @org.springframework.data.jpa.repository.Query("UPDATE User u SET u.cvSubmissionCount = 0")
+        int resetAllCvSubmissionCounts();
+
+        @org.springframework.data.jpa.repository.Modifying
+        @org.springframework.data.jpa.repository.Query("UPDATE User u SET u.isVip = false WHERE u.isVip = true AND u.vipExpiryDate < :now")
+        int deactivateExpiredVipUsers(@Param("now") java.time.LocalDateTime now);
+
+}

@@ -141,6 +141,7 @@ namespace JobZone.ASP.NET.Mappings
 
             // Comment -> ResCommentDTO
             CreateMap<Comment, ResCommentDTO>()
+                .ForMember(d => d.Comment, opt => opt.MapFrom(s => s.CommentContent))
                 .ForMember(d => d.User, opt => opt.MapFrom(s =>
                     s.User != null ? new CommentUserInfoDTO { Id = s.User.Id, Name = s.User.Name, Email = s.User.Email, Avatar = s.User.Avatar } : null));
 

@@ -1,0 +1,192 @@
+package vn.hoidanit.JobZone.service;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.Normalizer;
+import java.util.regex.Pattern;
+
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@Slf4j
+public class FileService {
+
+    @Value("${hoidanit.upload-file.base-uri}")
+    private String baseURI;
+
+    public void createDirectory(String folder) {
+        try {
+            // CÁCH FIX: Phải dùng URI.create để Java hiểu đây là một giao thức file
+            // Sau đó mới chuyển sang Path.
+            URI baseUri = URI.create(baseURI);
+            Path rootPath = Paths.get(baseUri);
+
+            // Dùng resolve để nối thêm folder (ví dụ: "resume")
+            Path targetPath = rootPath.resolve(folder);
+
+            if (!Files.exists(targetPath)) {
+                Files.createDirectories(targetPath);
+                log.info(">>> CREATE DIRECTORY SUCCESS: {}", targetPath.toString());
+            }
+        } catch (Exception e) {
+            // In ra lỗi chi tiết để debug nếu có vấn đề về quyền ghi file
+            log.error(">>> ERROR CREATE DIRECTORY: {}", e.getMessage());
+        }
+    }
+
+    public String store(MultipartFile file, String folder) throws IOException {
+        String cleanName = sanitizeFileName(file.getOriginalFilename());
+        String finalName = System.currentTimeMillis() + "-" + cleanName;
+
+        // Chuyển đổi baseURI "file:///..." sang Path vật lý
+        Path rootPath = Paths.get(URI.create(baseURI));
+
+        // Nối đường dẫn: root/folder/fileName
+        Path finalPath = rootPath.resolve(folder).resolve(finalName);
+
+        // Đảm bảo thư mục tồn tại
+        Files.createDirectories(finalPath.getParent());
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, finalPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return finalName;
+    }
+
+    public long getFileLength(String fileName, String folder) throws URISyntaxException {
+        URI uri = new URI(baseURI + folder + "/" + fileName);
+        Path path = Paths.get(uri);
+
+        File tmpDir = new File(path.toString());
+
+        // file không tồn tại, hoặc file là 1 director => return 0
+        if (!tmpDir.exists() || tmpDir.isDirectory())
+            return 0;
+        return tmpDir.length();
+    }
+
+    public InputStreamResource getResource(String fileName, String folder)
+            throws FileNotFoundException {
+        Path rootPath = Paths.get(URI.create(baseURI));
+        Path finalPath = rootPath.resolve(folder).resolve(fileName);
+
+        File file = new File(finalPath.toString());
+        return new InputStreamResource(new FileInputStream(file));
+    }
+
+    /**
+     * PHƯƠNG THỨC ĐÃ CẬP NHẬT: Trích xuất nội dung văn bản từ một file.
+     * 
+     * @param file File đầu vào (PDF, DOCX, TXT, etc.)
+     * @return Nội dung văn bản của file
+     * @throws IOException
+     */
+    public String extractTextFromFile(MultipartFile file) throws IOException {
+        Tika tika = new Tika();
+        try (InputStream stream = file.getInputStream()) {
+            return tika.parseToString(stream);
+        } catch (TikaException e) {
+            // Bắt TikaException và ném ra một IOException để Controller xử lý
+            // Điều này giúp giữ cho các lớp gọi không cần biết về TikaException cụ thể
+            throw new IOException("Lỗi khi phân tích cú pháp file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Đọc một file từ storage và trả về dưới dạng byte array.
+     * 
+     * @param fileName Tên file
+     * @param folder   Thư mục chứa file
+     * @return a byte array of the file content
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public byte[] readFileAsBytes(String fileName, String folder) throws IOException, URISyntaxException {
+        if (fileName == null || folder == null)
+            return null;
+
+        URI uri = new URI(baseURI + folder + "/" + fileName);
+        Path path = Paths.get(uri);
+
+        if (Files.exists(path) && !Files.isDirectory(path)) {
+            return Files.readAllBytes(path);
+        }
+
+        return null; // Trả về null nếu file không tồn tại
+    }
+
+    /**
+     * Trích xuất nội dung văn bản từ một file đã được lưu trữ.
+     *
+     * @param fileName Tên file cần trích xuất.
+     * @param folder   Thư mục chứa file.
+     * @return Nội dung văn bản của file.
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public String extractTextFromStoredFile(String fileName, String folder) throws IOException, URISyntaxException {
+        byte[] fileBytes = readFileAsBytes(fileName, folder);
+        if (fileBytes == null || fileBytes.length == 0) {
+            return null;
+        }
+        return extractTextFromBytes(fileBytes);
+    }
+
+    /**
+     * Trích xuất nội dung văn bản từ một mảng byte.
+     *
+     * @param fileBytes Mảng byte của file.
+     * @return Nội dung văn bản.
+     * @throws IOException
+     */
+    public String extractTextFromBytes(byte[] fileBytes) throws IOException {
+        if (fileBytes == null || fileBytes.length == 0) {
+            return "";
+        }
+        Tika tika = new Tika();
+        try (InputStream stream = new ByteArrayInputStream(fileBytes)) {
+            return tika.parseToString(stream);
+        } catch (TikaException e) {
+            throw new IOException("Lỗi khi phân tích cú pháp dữ liệu byte: " + e.getMessage(), e);
+        }
+    };
+
+    public String sanitizeFileName(String fileName) {
+        if (fileName == null)
+            return "unknown_file";
+
+        // 1. Loại bỏ dấu tiếng Việt
+        String temp = Normalizer.normalize(fileName, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        temp = pattern.matcher(temp).replaceAll("");
+
+        // 2. Thay thế chữ đ/Đ
+        temp = temp.replace('đ', 'd').replace('Đ', 'D');
+
+        // 3. Thay thế khoảng trắng và ký tự đặc biệt bằng dấu gạch ngang
+        // Giữ lại dấu chấm để không làm hỏng extension
+        temp = temp.replaceAll("[^a-zA-Z0-9.-]", "-");
+
+        // 4. Loại bỏ các dấu gạch ngang liên tiếp (--- thành -)
+        temp = temp.replaceAll("-+", "-");
+
+        return temp;
+    }
+}

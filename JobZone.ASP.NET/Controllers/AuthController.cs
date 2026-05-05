@@ -211,6 +211,172 @@ namespace JobZone.ASP.NET.Controllers
             return Ok(res);
         }
 
+        [HttpPost("auth/change-password")]
+        [Authorize]
+        [ApiMessage("Đổi mật khẩu")]
+        public async Task<IActionResult> ChangePassword([FromBody] ReqChangePasswordDTO changePasswordDTO)
+        {
+            var email = User.Identity?.Name ?? throw new IdInvalidException("Không tìm thấy user");
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null) throw new IdInvalidException("User không tồn tại");
+
+            if (user.Password != null)
+            {
+                if (string.IsNullOrEmpty(changePasswordDTO.OldPassword) || !BCrypt.Net.BCrypt.Verify(changePasswordDTO.OldPassword, user.Password))
+                {
+                    throw new IdInvalidException("Mật khẩu cũ không đúng...");
+                }
+            }
+
+            var updatedUser = await _userService.SaveUserWithNewPasswordAsync(user, changePasswordDTO.NewPassword);
+
+            // Generate new tokens to keep user logged in
+            var resLogin = new ResLoginDTO { User = _mapper.Map<UserLoginDTO>(updatedUser) };
+            resLogin.AccessToken = _authService.CreateAccessToken(email, resLogin);
+            var newRefreshToken = _authService.CreateRefreshToken(email, resLogin);
+
+            // Blacklist and delete OLD session
+            var oldRefreshToken = Request.Cookies["refresh_token"];
+            string? oldJti = null;
+            if (!string.IsNullOrEmpty(oldRefreshToken))
+            {
+                try
+                {
+                    var principal = _authService.ValidateRefreshToken(oldRefreshToken);
+                    oldJti = principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                    if (!string.IsNullOrEmpty(oldJti)) await _userService.DeleteSessionByJtiAsync(oldJti);
+                }
+                catch { /* Ignore */ }
+            }
+
+            // Create NEW session
+            var handler = new JwtSecurityTokenHandler();
+            var decodedNew = handler.ReadJwtToken(newRefreshToken);
+            var newJti = decodedNew.Id;
+            await _userService.CreateSessionAsync(updatedUser, newJti, decodedNew.ValidTo);
+
+            SetRefreshTokenCookie(newRefreshToken);
+
+            // Get all sessions for response
+            var sessions = await _userService.GetSessionsForUserAsync(updatedUser.Id);
+            var sessionDtos = sessions.Select(s => new ResSessionDTO(s, newJti)).ToList();
+
+            return Ok(new ResChangePasswordDTO(resLogin, sessionDtos, newJti));
+        }
+
+        [HttpPost("auth/send-otp")]
+        [AllowAnonymous]
+        [ApiMessage("Gửi mã OTP để đổi mật khẩu")]
+        public async Task<IActionResult> SendOtp([FromBody] ReqSendOtpDTO dto)
+        {
+            var user = await _userService.GetUserByEmailAsync(dto.Email);
+            if (user == null) throw new IdInvalidException("Email không tồn tại");
+
+            var otpCode = _otpService.GenerateOtp();
+            await _otpService.SaveOtpAsync(dto.Email, otpCode);
+            await _emailService.SendEmailAsync(dto.Email, "Mã OTP để đổi mật khẩu", $"Mã OTP của bạn là: <b>{otpCode}</b>. Mã này có hiệu lực trong 5 phút.", true);
+
+            return Ok(null);
+        }
+
+        [HttpPost("auth/verify-otp-change-password")]
+        [AllowAnonymous]
+        [ApiMessage("Xác minh OTP và đổi mật khẩu")]
+        public async Task<IActionResult> VerifyOtpAndChangePassword([FromBody] ReqVerifyOtpChangePasswordDTO dto)
+        {
+            await _otpService.ValidateOtpAsync(dto.Email, dto.OtpCode);
+            var user = await _userService.GetUserByEmailAsync(dto.Email);
+            if (user == null) throw new IdInvalidException("User không tồn tại");
+
+            var updatedUser = await _userService.SaveUserWithNewPasswordAsync(user, dto.NewPassword);
+
+            // Delete ALL old sessions for security after password reset
+            var sessions = await _userService.GetSessionsForUserAsync(updatedUser.Id);
+            foreach (var session in sessions)
+            {
+                await _userService.DeleteSessionByJtiAsync(session.RefreshTokenJti);
+            }
+
+            // Login immediately
+            var res = new ResLoginDTO { User = _mapper.Map<UserLoginDTO>(updatedUser) };
+            res.AccessToken = _authService.CreateAccessToken(updatedUser.Email, res);
+            var refreshToken = _authService.CreateRefreshToken(updatedUser.Email, res);
+
+            var handler = new JwtSecurityTokenHandler();
+            var decoded = handler.ReadJwtToken(refreshToken);
+            await _userService.CreateSessionAsync(updatedUser, decoded.Id, decoded.ValidTo);
+
+            SetRefreshTokenCookie(refreshToken);
+            return Ok(res);
+        }
+
+        [HttpGet("auth/sessions")]
+        [Authorize]
+        [ApiMessage("Lấy danh sách các thiết bị đang đăng nhập")]
+        public async Task<IActionResult> GetActiveSessions()
+        {
+            var email = User.Identity?.Name ?? throw new IdInvalidException("Không tìm thấy user");
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null) throw new IdInvalidException("User không tồn tại");
+
+            var refreshToken = Request.Cookies["refresh_token"];
+            string? currentJti = null;
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                try
+                {
+                    var principal = _authService.ValidateRefreshToken(refreshToken);
+                    currentJti = principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                }
+                catch { /* Ignore */ }
+            }
+
+            var sessions = await _userService.GetSessionsForUserAsync(user.Id);
+            var dtos = sessions.Select(s => new ResSessionDTO(s, currentJti)).ToList();
+            return Ok(dtos);
+        }
+
+        [HttpDelete("auth/sessions")]
+        [Authorize]
+        [ApiMessage("Đăng xuất nhiều thiết bị cụ thể")]
+        public async Task<IActionResult> LogoutSessions([FromBody] ReqDeleteSessionsDTO deleteDTO)
+        {
+            var email = User.Identity?.Name ?? throw new IdInvalidException("Không tìm thấy user");
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null) throw new IdInvalidException("User không tồn tại");
+
+            var refreshToken = Request.Cookies["refresh_token"];
+            string? currentJti = null;
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                try
+                {
+                    var principal = _authService.ValidateRefreshToken(refreshToken);
+                    currentJti = principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                }
+                catch { /* Ignore */ }
+            }
+
+            // Filter out current session from deletion list if present
+            var idsToDelete = deleteDTO.Ids ?? new List<long>();
+            if (!string.IsNullOrEmpty(currentJti))
+            {
+                var currentSession = await _userService.FindSessionByJtiAsync(currentJti);
+                if (currentSession != null)
+                {
+                    idsToDelete.Remove(currentSession.Id);
+                }
+            }
+
+            await _userService.DeleteSessionsByIdsAsync(idsToDelete, user.Id);
+            
+            // Update last security timestamp to invalidate existing access tokens of target devices
+            user.LastSecurityUpdateAt = DateTime.UtcNow;
+            await _userService.SaveUserAsync(user);
+
+            return Ok(null);
+        }
+
         private void SetRefreshTokenCookie(string token)
         {
             var expSeconds = int.Parse(_config["Jwt:RefreshTokenExpirationSeconds"] ?? "604800");
@@ -221,3 +387,4 @@ namespace JobZone.ASP.NET.Controllers
         }
     }
 }
+
