@@ -1,23 +1,29 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { IJob } from "@/types/backend";
+import ApplyModal from "@/components/client/modal/apply.modal";
+import { useCurrentApp } from "@/components/context/app.context";
 import { callFetchJobById } from "@/config/api";
-import parse from "html-react-parser";
-import { Divider, Skeleton, Tag, Empty } from "antd"; // Loại bỏ Row, Col vì không dùng nữa
+import { convertSlug, getLocationName } from "@/config/utils";
+import { IJob } from "@/types/backend";
 import {
+  CalendarOutlined,
   DollarOutlined,
   HistoryOutlined,
   HomeOutlined,
   TeamOutlined,
-  CalendarOutlined,
   UserOutlined,
+  HeartOutlined,
+  HeartFilled,
+  RollbackOutlined,
+  ArrowUpOutlined
 } from "@ant-design/icons";
-import { convertSlug, getLocationName } from "@/config/utils";
+import { Divider, Empty, Skeleton, Tag, message, notification } from "antd"; // Loại bỏ Row, Col vì không dùng nữa
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import ApplyModal from "@/components/client/modal/apply.modal";
-import { useCurrentApp } from "@/components/context/app.context";
+import parse from "html-react-parser";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import "styles/panel-detail.scss";
+import { callCheckJobSaved, callSaveJob, callUnsaveJob } from "@/config/api";
+import { useAppSelector } from "@/redux/hooks";
 
 dayjs.extend(relativeTime);
 
@@ -27,20 +33,56 @@ const ClientJobStandaloneDetailPage = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const { id } = useParams<{ id: string }>();
   const { theme } = useCurrentApp();
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const isAuthenticated = useAppSelector((state) => state.account.isAuthenticated);
+
+  const fetchJobDetail = async () => {
+    if (id) {
+      setIsLoading(true);
+      const res = await callFetchJobById(id);
+      setJobDetail(res?.data ?? null);
+      setIsLoading(false);
+
+      if (isAuthenticated) {
+        const resSaved = await callCheckJobSaved(id);
+        if (resSaved?.data) {
+          setIsSaved(true);
+        } else {
+          setIsSaved(false);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchJobDetail = async () => {
-      if (id) {
-        setIsLoading(true);
-        const res = await callFetchJobById(id);
-        setJobDetail(res?.data ?? null);
-        console.log("Kiểm tra dữ liệu jobDetail:", jobDetail);
-
-        setIsLoading(false);
-      }
-    };
     fetchJobDetail();
-  }, [id]);
+  }, [id, isAuthenticated]);
+
+  const handleToggleSaveJob = async () => {
+    if (!isAuthenticated) {
+      notification.error({
+        message: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để sử dụng tính năng này",
+      });
+      return;
+    }
+
+    if (id) {
+      try {
+        if (isSaved) {
+          await callUnsaveJob(id);
+          setIsSaved(false);
+          message.success("Đã bỏ lưu công việc");
+        } else {
+          await callSaveJob(id);
+          setIsSaved(true);
+          message.success("Đã lưu công việc thành công");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
 
   const formatSalary = (salary: number | undefined | null) => {
     if (salary === null || salary === undefined) {
@@ -142,12 +184,58 @@ const ClientJobStandaloneDetailPage = () => {
                   </div>
                 </div>
               )}
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="btn-apply"
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "10px"
+                }}
               >
-                Apply Now
-              </button>
+                <div style={{ flex: "8", display: "flex" }}>
+                  {jobDetail.applied ? (
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="btn-reapply"
+                      style={{ width: "100%" }}
+                    >
+                      Ứng tuyển lại {""}
+                      <RollbackOutlined />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="btn-apply"
+                      style={{ width: "100%" }}
+                    >
+                      Apply Now {""}
+                      <ArrowUpOutlined />
+                    </button>
+                  )}
+                </div>
+                <div style={{ flex: "1" }}>
+                  <button
+                    onClick={handleToggleSaveJob}
+                    style={{
+                      border: "1px solid #d9d9d9",
+                      borderRadius: "8px",
+                      width: "40px",
+                      height: "40px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: theme === "dark" ? "#141414" : "#fff",
+                      color: isSaved ? "#ff4d4f" : (theme === "dark" ? "#fff" : "#000"),
+                      cursor: "pointer",
+                      fontSize: "20px",
+                      transition: "all 0.3s"
+                    }}
+                    title={isSaved ? "Bỏ lưu" : "Lưu tin"}
+                  >
+                    {isSaved ? <HeartFilled /> : <HeartOutlined />}
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="job-detail-content">
@@ -207,6 +295,7 @@ const ClientJobStandaloneDetailPage = () => {
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           jobDetail={jobDetail}
+          onSuccess={() => fetchJobDetail()}
         />
       </div>
     </div>

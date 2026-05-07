@@ -11,15 +11,19 @@ import {
   HomeOutlined,
   RollbackOutlined,
   TeamOutlined,
-  UserOutlined
+  UserOutlined,
+  HeartOutlined,
+  HeartFilled
 } from "@ant-design/icons";
-import { Divider, Empty, Skeleton, Tag } from "antd";
+import { Divider, Empty, Skeleton, Tag, message, notification } from "antd";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import parse from "html-react-parser";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import InterviewModal from "./InterviewModal";
+import { callCheckJobSaved, callSaveJob, callUnsaveJob } from "@/config/api";
+import { useAppSelector } from "@/redux/hooks";
 
 dayjs.extend(relativeTime);
 
@@ -29,23 +33,63 @@ const JobDetailPanel = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isInterviewModalOpen, setIsInterviewModalOpen] =
     useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  const isAuthenticated = useAppSelector((state) => state.account.isAuthenticated);
 
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const { theme } = useCurrentApp();
   const language = localStorage.getItem("language") || "vi";
 
-  useEffect(() => {
-    const fetchJobDetail = async () => {
-      if (id) {
-        setIsLoading(true);
-        const res = await callFetchJobById(id);
-        setJobDetail(res?.data ?? null);
-        setIsLoading(false);
+  const fetchJobDetail = async () => {
+    if (id) {
+      setIsLoading(true);
+      const res = await callFetchJobById(id);
+      setJobDetail(res?.data ?? null);
+      setIsLoading(false);
+
+      // Kiểm tra xem đã lưu chưa
+      if (isAuthenticated) {
+        const resSaved = await callCheckJobSaved(id);
+        if (resSaved?.data) {
+          setIsSaved(true);
+        } else {
+          setIsSaved(false);
+        }
       }
-    };
+    }
+  };
+
+  useEffect(() => {
     fetchJobDetail();
-  }, [id]);
+  }, [id, isAuthenticated]);
+
+  const handleToggleSaveJob = async () => {
+    if (!isAuthenticated) {
+      notification.error({
+        message: "Yêu cầu đăng nhập",
+        description: "Vui lòng đăng nhập để sử dụng tính năng này",
+      });
+      return;
+    }
+
+    if (id) {
+      try {
+        if (isSaved) {
+          await callUnsaveJob(id);
+          setIsSaved(false);
+          message.success("Đã bỏ lưu công việc");
+        } else {
+          await callSaveJob(id);
+          setIsSaved(true);
+          message.success("Đã lưu công việc thành công");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
 
   console.log("Ngôn ngữ đang dùng:", language); // << THÊM DÒNG NÀY
 
@@ -190,6 +234,28 @@ const JobDetailPanel = () => {
                   </button>
                 )}{" "}
               </div>
+              <div style={{ flex: "1" }}>
+                <button
+                  onClick={handleToggleSaveJob}
+                  style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "8px",
+                    width: "40px",
+                    height: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: theme === "dark" ? "#141414" : "#fff",
+                    color: isSaved ? "#ff4d4f" : (theme === "dark" ? "#fff" : "#000"),
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    transition: "all 0.3s"
+                  }}
+                  title={isSaved ? "Bỏ lưu" : "Lưu tin"}
+                >
+                  {isSaved ? <HeartFilled /> : <HeartOutlined />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -251,6 +317,7 @@ const JobDetailPanel = () => {
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         jobDetail={jobDetail}
+        onSuccess={() => fetchJobDetail()}
       />
       <InterviewModal
         isOpen={isInterviewModalOpen}

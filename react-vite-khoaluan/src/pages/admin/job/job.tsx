@@ -220,7 +220,10 @@ const JobPage = () => {
     const clone = { ...params };
     const filterParts: string[] = [];
     if (clone.name) filterParts.push(`name@=${clone.name}`);
-    if (clone.salary) filterParts.push(`salary==${clone.salary}`);
+    if (clone.salary) {
+      const salary = Number(clone.salary);
+      filterParts.push(`salary>=${salary - 500000},salary<=${salary + 500000}`);
+    }
     if (clone.location) filterParts.push(`location@=${clone.location}`);
 
     if (clone?.level?.length) {

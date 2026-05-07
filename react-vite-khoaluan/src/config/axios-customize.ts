@@ -138,23 +138,21 @@ instance.interceptors.response.use(
       }
     } // Logic 400 (Lỗi 400 từ /refresh gọi TRỰC TIẾP)
 
-    if (+status === 400 && url === "/api/v1/auth/refresh") {
-      // === ĐÃ XÓA LOGOUT ===
-      // Chỉ reject lỗi để component gọi nó tự xử lý.
-      // KHÔNG logout tại đây.
-    } // Logic 403 (Không có quyền)
-
+    // Logic 403 (Không có quyền)
     if (+status === 403) {
-      // KHÔNG logout, chỉ thông báo
       notification.error({
         message: data?.message ?? "Không có quyền",
-        description:
-          data?.error ?? "Bạn không có quyền thực hiện hành động này.",
+        description: data?.error ?? "Bạn không có quyền thực hiện hành động này.",
       });
-    } // Trả về lỗi cho các trường hợp khác (500, 404,...)
+    }
 
-    // KHÔNG logout, chỉ reject lỗi
-    return Promise.reject(error.response?.data ?? error);
+    // Trả về dữ liệu lỗi thay vì reject để component có thể đọc res.statusCode
+    // Điều này giúp tránh việc bị "chặn" bởi axios và cho phép component tự xử lý logic business
+    if (data) {
+      return data;
+    }
+
+    return Promise.reject(error);
   },
 );
 // =================================================================

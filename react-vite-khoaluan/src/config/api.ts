@@ -782,3 +782,22 @@ export const callEvaluateCompany = (
     `/api/v1/gemini/evaluate-company/${id}?language=${language}`,
   );
 };
+
+/**
+ * User Save Job API
+ */
+export const callSaveJob = (jobId: string | number) => {
+  return axios.post(`/api/v1/user-save-jobs/${jobId}`);
+};
+
+export const callUnsaveJob = (jobId: string | number) => {
+  return axios.delete(`/api/v1/user-save-jobs/${jobId}`);
+};
+
+export const callCheckJobSaved = (jobId: string | number) => {
+  return axios.get<IBackendRes<boolean>>(`/api/v1/user-save-jobs/is-saved/${jobId}`);
+};
+
+export const callFetchSavedJobs = (query: string) => {
+  return axios.get<IBackendRes<IModelPaginate<any>>>(`/api/v1/user-save-jobs?${query}`);
+};

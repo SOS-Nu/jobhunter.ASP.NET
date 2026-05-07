@@ -120,7 +120,7 @@ namespace JobZone.ASP.NET.Mappings
             CreateMap<Job, ResFetchJobDTO>()
                 .ForMember(d => d.Level, opt => opt.MapFrom(s => s.Level != null ? s.Level.ToString() : null))
                 .ForMember(d => d.Company, opt => opt.MapFrom(s =>
-                    s.Company != null ? new CompanyInfoDTO { Id = s.Company.Id, Name = s.Company.Name, Logo = s.Company.Logo } : null))
+                    s.Company != null ? new CompanyInfoDTO { Id = s.Company.Id, Name = s.Company.Name, Logo = s.Company.Logo, Scale = s.Company.Scale, FoundingYear = s.Company.FoundingYear, Address = s.Company.Address } : null))
                 .ForMember(d => d.Skills, opt => opt.MapFrom(s =>
                     s.Skills != null ? s.Skills.Select(sk => new SkillInfoDTO { Id = sk.Id, Name = sk.Name }).ToList() : null));
 
@@ -161,6 +161,11 @@ namespace JobZone.ASP.NET.Mappings
                 .ForMember(d => d.UserEmail, opt => opt.MapFrom(s => s.User != null ? s.User.Email : null))
                 .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.User != null ? s.User.Id : 0))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
+
+            // UserSaveJob -> ResSaveJobDTO
+            CreateMap<UserSaveJob, ResSaveJobDTO>()
+                .ForMember(d => d.JobName, opt => opt.MapFrom(s => s.Job.Name))
+                .ForMember(d => d.CompanyName, opt => opt.MapFrom(s => s.Job.Company != null ? s.Job.Company.Name : null));
         }
     }
 }

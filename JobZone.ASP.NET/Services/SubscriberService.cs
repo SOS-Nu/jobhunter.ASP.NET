@@ -19,11 +19,13 @@ namespace JobZone.ASP.NET.Services
     {
         private readonly AppDbContext _context;
         private readonly IEmailService _emailService;
+        private readonly ILogger<SubscriberService> _logger;
 
-        public SubscriberService(AppDbContext context, IEmailService emailService)
+        public SubscriberService(AppDbContext context, IEmailService emailService, ILogger<SubscriberService> logger)
         {
             _context = context;
             _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<bool> IsExistsByEmailAsync(string email)
@@ -74,8 +76,16 @@ namespace JobZone.ASP.NET.Services
 
         public async Task SendSubscribersEmailJobsAsync()
         {
+            _logger.LogInformation(">>> Bắt đầu quét và gửi email cho Subscribers...");
             var subscribers = await _context.Subscribers.Include(s => s.Skills).ToListAsync();
             
+            if (!subscribers.Any())
+            {
+                _logger.LogWarning(">>> Không có Subscriber nào trong hệ thống.");
+                return;
+            }
+
+            int count = 0;
             foreach (var sub in subscribers)
             {
                 if (sub.Skills != null && sub.Skills.Any())
@@ -105,9 +115,11 @@ namespace JobZone.ASP.NET.Services
                             sub.Name,
                             emailJobs
                         );
+                        count++;
                     }
                 }
             }
+            _logger.LogInformation(">>> Đã gửi email thành công cho {Count} subscribers phù hợp.", count);
         }
     }
 }

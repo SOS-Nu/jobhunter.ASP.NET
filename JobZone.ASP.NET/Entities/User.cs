@@ -97,5 +97,6 @@ namespace JobZone.ASP.NET.Entities
         public virtual ICollection<UserSession> Sessions { get; set; } = new List<UserSession>();
         public virtual ICollection<PaymentHistory> PaymentHistories { get; set; } = new List<PaymentHistory>();
         public virtual ICollection<WorkExperience> WorkExperiences { get; set; } = new List<WorkExperience>();
+        public virtual ICollection<UserSaveJob> SavedJobs { get; set; } = new List<UserSaveJob>();
     }
 }

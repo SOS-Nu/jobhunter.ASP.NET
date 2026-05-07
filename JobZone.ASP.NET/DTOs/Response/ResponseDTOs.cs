@@ -308,12 +308,24 @@ namespace JobZone.ASP.NET.DTOs.Response
         public long Id { get; set; }
         public string? Name { get; set; }
         public string? Logo { get; set; }
+        public string? Scale { get; set; }
+        public int? FoundingYear { get; set; }
+        public string? Address { get; set; }
     }
 
     public class SkillInfoDTO
     {
         public long Id { get; set; }
         public string? Name { get; set; }
+    }
+
+    public class ResSaveJobDTO
+    {
+        public long Id { get; set; }
+        public long JobId { get; set; }
+        public string? JobName { get; set; }
+        public string? CompanyName { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     // ========================

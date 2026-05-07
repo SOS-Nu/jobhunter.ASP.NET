@@ -27,6 +27,7 @@ interface IProps {
   isModalOpen: boolean;
   setIsModalOpen: (v: boolean) => void;
   jobDetail: IJob | null;
+  onSuccess?: () => void;
 }
 
 const ApplyModal = (props: IProps) => {
@@ -71,6 +72,7 @@ const ApplyModal = (props: IProps) => {
           setIsModalOpen(false);
           setCoverLetter(""); // Reset form sau khi thành công
           setUrlCV("");
+          if (props.onSuccess) props.onSuccess();
         } else {
           notification.error({
             message: "Có lỗi xảy ra",

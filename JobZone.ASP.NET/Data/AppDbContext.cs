@@ -40,6 +40,7 @@ namespace JobZone.ASP.NET.Data
         public DbSet<Otp> Otps => Set<Otp>();
         public DbSet<ChatRoom> ChatRooms => Set<ChatRoom>();
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+        public DbSet<UserSaveJob> UserSaveJobs => Set<UserSaveJob>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -250,6 +251,21 @@ namespace JobZone.ASP.NET.Data
                 .WithMany()
                 .HasForeignKey(cm => cm.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ========================
+            // USER SAVE JOB RELATIONSHIPS
+            // ========================
+            modelBuilder.Entity<UserSaveJob>()
+                .HasOne(usj => usj.User)
+                .WithMany(u => u.SavedJobs)
+                .HasForeignKey(usj => usj.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserSaveJob>()
+                .HasOne(usj => usj.Job)
+                .WithMany()
+                .HasForeignKey(usj => usj.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ import {
   callCreateSubscriber,
   callFetchAllSkill,
   callFetchResumeByUser,
+  callFetchSavedJobs,
   callGetSubscriberSkills,
   callUpdateSubscriber,
 } from "@/config/api";
@@ -110,6 +111,75 @@ const UserResume = () => {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </Table>
+      )}
+    </div>
+  );
+};
+
+//================================================================
+// Component con: Bảng quản lý Việc làm đã lưu
+//================================================================
+const UserSaveJob = () => {
+  const [listSavedJobs, setListSavedJobs] = useState<any[]>([]);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+
+  useEffect(() => {
+    const init = async () => {
+      setIsFetching(true);
+      const res = await callFetchSavedJobs("page=1&pageSize=100");
+      if (res && res.data) {
+        setListSavedJobs(res?.data?.result ?? []);
+      }
+      setIsFetching(false);
+    };
+    init();
+  }, []);
+
+  return (
+    <div className="user-resume-container">
+      {isFetching ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+        </div>
+      ) : (
+        <Table striped bordered hover responsive className="align-middle">
+          <thead>
+            <tr>
+              <th style={{ width: "5%" }}>#</th>
+              <th>Tên công việc</th>
+              <th>Công ty</th>
+              <th>Ngày lưu</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listSavedJobs.map((item, index) => (
+              <tr key={item.id}>
+                <td className="text-center">{index + 1}</td>
+                <td>{item.jobName}</td>
+                <td>{item.companyName}</td>
+                <td>{dayjs(item.createdAt).format("DD-MM-YYYY HH:mm:ss")}</td>
+                <td className="text-center">
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    href={`/job/detail/${item.jobId}`}
+                    target="_blank"
+                  >
+                    Xem chi tiết
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {listSavedJobs.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center">
+                  Chưa có công việc nào được lưu
+                </td>
+              </tr>
+            )}
           </tbody>
         </Table>
       )}
@@ -374,6 +444,11 @@ const ManageAccount = (props: IProps) => {
           {user?.company ? null : (
             <Tab eventKey="user-resume" title="Lịch sử rải CV">
               <UserResume />
+            </Tab>
+          )}
+          {user?.company ? null : (
+            <Tab eventKey="user-save-job" title="Việc làm đã lưu">
+              <UserSaveJob />
             </Tab>
           )}
           {user?.company ? null : (

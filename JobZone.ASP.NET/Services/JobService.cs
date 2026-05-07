@@ -14,7 +14,7 @@ namespace JobZone.ASP.NET.Services
     public interface IJobService
     {
         Task<ResCreateJobDTO> CreateAsync(ReqCreateJobDTO dto);
-        Task<ResUpdateJobDTO?> UpdateAsync(Job job);
+        Task<ResUpdateJobDTO?> UpdateAsync(ReqUpdateJobDTO dto);
         Task DeleteAsync(long id);
         Task<ResFetchJobDTO?> GetByIdAsync(long id);
         Task<PaginatedResponse<ResFetchJobDTO>> GetAllAsync(SieveModel sieveModel);
@@ -61,25 +61,26 @@ namespace JobZone.ASP.NET.Services
             return _mapper.Map<ResCreateJobDTO>(job);
         }
 
-        public async Task<ResUpdateJobDTO?> UpdateAsync(Job j)
+        public async Task<ResUpdateJobDTO?> UpdateAsync(ReqUpdateJobDTO dto)
         {
-            var existing = await _context.Jobs.Include(x => x.Skills).FirstOrDefaultAsync(x => x.Id == j.Id);
+            var existing = await _context.Jobs.Include(x => x.Skills).FirstOrDefaultAsync(x => x.Id == dto.Id);
             if (existing == null) return null;
 
-            if (j.Skills != null)
+            if (dto.Skills != null)
             {
-                var ids = j.Skills.Select(s => s.Id).ToList();
+                var ids = dto.Skills.Select(s => s.Id).ToList();
                 existing.Skills = await _context.Skills.Where(s => ids.Contains(s.Id)).ToListAsync();
             }
-            if (j.CompanyId.HasValue)
+            if (dto.Company != null)
             {
-                var comp = await _context.Companies.FindAsync(j.CompanyId.Value);
+                var comp = await _context.Companies.FindAsync(dto.Company.Id);
                 if (comp != null) existing.CompanyId = comp.Id;
             }
 
-            existing.Name = j.Name; existing.Salary = j.Salary; existing.Quantity = j.Quantity;
-            existing.Location = j.Location; existing.Level = j.Level; existing.StartDate = j.StartDate;
-            existing.EndDate = j.EndDate; existing.Active = j.Active; existing.Address = j.Address;
+            existing.Name = dto.Name; existing.Salary = dto.Salary; existing.Quantity = dto.Quantity;
+            existing.Location = dto.Location; existing.Level = dto.Level; existing.StartDate = dto.StartDate;
+            existing.EndDate = dto.EndDate; existing.Active = dto.Active; existing.Address = dto.Address;
+            existing.Description = dto.Description;
 
             await _context.SaveChangesAsync();
             return _mapper.Map<ResUpdateJobDTO>(existing);

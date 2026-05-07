@@ -53,26 +53,15 @@ const JobFilter = (props: IProps) => {
     }
   }, [searchParams]);
 
-  // >>> LOGIC MỚI: Hàm xử lý nhập liệu cho ô lương <<<
-  const handleSalaryInputChange = (
+  // Đơn giản hóa: Không dùng format phức tạp để tránh lỗi nhảy con trỏ
+  const handleSalaryChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<string>>
   ) => {
-    // 1. Loại bỏ dấu phẩy để lấy giá trị số thô
-    const rawValue = e.target.value.replace(/,/g, "");
-    // 2. Chỉ cho phép nhập số hoặc chuỗi rỗng
-    if (/^\d*$/.test(rawValue)) {
-      // 3. Cập nhật state với giá trị số thô
-      setter(rawValue);
+    const val = e.target.value;
+    if (val === "" || /^\d+$/.test(val)) {
+      setter(val);
     }
-  };
-
-  // >>> LOGIC MỚI: Hàm định dạng số để hiển thị ra UI <<<
-  const formatSalaryDisplay = (value: string) => {
-    if (!value) return ""; // Nếu rỗng thì thôi
-    const number = parseInt(value, 10);
-    // Dùng toLocaleString để tự động thêm dấu phẩy theo chuẩn Việt Nam
-    return number.toLocaleString("en-US"); // Code mới
   };
 
   const handleLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,19 +125,19 @@ const JobFilter = (props: IProps) => {
           </label>
           <div className="input-group">
             <input
-              type="text" // 1. Đổi type="number" thành "text"
+              type="text"
               className="form-control"
               placeholder="Từ"
-              value={formatSalaryDisplay(minSalary)} // 2. Hiển thị giá trị đã định dạng
-              onChange={(e) => handleSalaryInputChange(e, setMinSalary)} // 3. Dùng handler mới
+              value={minSalary}
+              onChange={(e) => handleSalaryChange(e, setMinSalary)}
             />
             <span className="input-group-text">-</span>
             <input
-              type="text" // 1. Đổi type="number" thành "text"
+              type="text"
               className="form-control"
               placeholder="Đến"
-              value={formatSalaryDisplay(maxSalary)} // 2. Hiển thị giá trị đã định dạng
-              onChange={(e) => handleSalaryInputChange(e, setMaxSalary)} // 3. Dùng handler mới
+              value={maxSalary}
+              onChange={(e) => handleSalaryChange(e, setMaxSalary)}
             />
           </div>
         </div>

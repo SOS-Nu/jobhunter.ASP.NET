@@ -128,6 +128,7 @@ try
     builder.Services.AddScoped<ISkillService, SkillService>();
     builder.Services.AddScoped<IDashboardService, DashboardService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<IUserSaveJobService, UserSaveJobService>();
     builder.Services.Configure<Sieve.Models.SieveOptions>(options =>
     {
         options.DefaultPageSize = 10;
