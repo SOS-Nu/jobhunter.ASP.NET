@@ -44,6 +44,13 @@ namespace JobZone.ASP.NET.Controllers
             return StatusCode(201, _mapper.Map<ResCreateUserDTO>(created));
         }
 
+        [HttpPost("users/bulk-create")]
+        [ApiMessage("Create multiple users")]
+        public async Task<IActionResult> BulkCreate([FromBody] List<UserBulkCreateDTO> userDTOs)
+        {
+            return StatusCode(201, await _userService.HandleBulkCreateUsersAsync(userDTOs));
+        }
+
         [HttpDelete("users/{id}")]
         [ApiMessage("Delete a user")]
         public async Task<IActionResult> DeleteUser(long id)

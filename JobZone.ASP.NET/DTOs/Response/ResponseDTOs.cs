@@ -508,13 +508,7 @@ namespace JobZone.ASP.NET.DTOs.Response
         public string? UpdatedBy { get; set; }
     }
 
-    public class ResBulkCreateSkillDTO
-    {
-        public int Total { get; set; }
-        public int Success { get; set; }
-        public int Failed { get; set; }
-        public List<string> FailedSkills { get; set; } = new List<string>();
-    }
+
 
     // ========================
     // DASHBOARD RESPONSE DTOs

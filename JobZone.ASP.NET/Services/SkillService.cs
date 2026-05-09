@@ -15,7 +15,7 @@ namespace JobZone.ASP.NET.Services
     public interface ISkillService
     {
         Task<ResSkillDTO> CreateAsync(ReqCreateSkillDTO dto);
-        Task<ResBulkCreateSkillDTO> BulkCreateAsync(List<ReqBulkCreateSkillDTO> dtos);
+        Task<ResBulkCreateSkillDTO> BulkCreateAsync(List<SkillBulkCreateDTO> dtos);
         Task<ResSkillDTO> UpdateAsync(ReqUpdateSkillDTO dto);
         Task DeleteAsync(long id);
         Task<PaginatedResponse<ResSkillDTO>> GetAllAsync(SieveModel sieveModel);
@@ -49,7 +49,7 @@ namespace JobZone.ASP.NET.Services
             return _mapper.Map<ResSkillDTO>(skill);
         }
 
-        public async Task<ResBulkCreateSkillDTO> BulkCreateAsync(List<ReqBulkCreateSkillDTO> dtos)
+        public async Task<ResBulkCreateSkillDTO> BulkCreateAsync(List<SkillBulkCreateDTO> dtos)
         {
             int total = dtos.Count;
             int success = 0;

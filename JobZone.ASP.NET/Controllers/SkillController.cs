@@ -29,7 +29,7 @@ namespace JobZone.ASP.NET.Controllers
 
         [HttpPost("skills/bulk-create")]
         [ApiMessage("Create list bulk skill")]
-        public async Task<IActionResult> BulkCreate([FromBody] List<ReqBulkCreateSkillDTO> dtos)
+        public async Task<IActionResult> BulkCreate([FromBody] List<SkillBulkCreateDTO> dtos)
         {
             var res = await _skillService.BulkCreateAsync(dtos);
             return StatusCode(201, res);

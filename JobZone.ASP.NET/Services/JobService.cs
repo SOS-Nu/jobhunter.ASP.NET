@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using JobZone.ASP.NET.Data;
@@ -22,6 +23,7 @@ namespace JobZone.ASP.NET.Services
         Task<ResCreateJobDTO> CreateForUserCompanyAsync(DTOs.Request.ReqCreateJobDTO dto);
         Task<ResUpdateJobDTO> UpdateForUserCompanyAsync(DTOs.Request.ReqUpdateJobDTO dto);
         Task DeleteForUserCompanyAsync(long id);
+        Task<ResBulkCreateJobDTO> HandleBulkCreateJobsAsync(List<JobBulkCreateDTO> jobDTOs);
     }
 
     public class JobService : IJobService
@@ -258,6 +260,73 @@ namespace JobZone.ASP.NET.Services
             if (job.CompanyId != user.CompanyId) throw new IdInvalidException("Bạn không có quyền xóa công việc này");
             _context.Jobs.Remove(job);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<ResBulkCreateJobDTO> HandleBulkCreateJobsAsync(List<JobBulkCreateDTO> jobDTOs)
+        {
+            int total = jobDTOs.Count;
+            int success = 0;
+            var failedJobs = new List<string>();
+
+            foreach (var dto in jobDTOs)
+            {
+                try
+                {
+                    // Check if job exists (by name and companyId)
+                    if (await _context.Jobs.AnyAsync(j => j.Name == dto.Name && j.CompanyId == dto.Company.Id))
+                    {
+                        failedJobs.Add($"{dto.Name} (Công việc đã tồn tại cho công ty này)");
+                        continue;
+                    }
+
+                    // Check and assign company
+                    var company = await _context.Companies.FindAsync(dto.Company.Id);
+                    if (company == null)
+                    {
+                        failedJobs.Add($"{dto.Name} (Company ID không tồn tại)");
+                        continue;
+                    }
+
+                    var job = new Job
+                    {
+                        Name = dto.Name,
+                        Location = dto.Location,
+                        Address = dto.Address,
+                        Salary = dto.Salary,
+                        Quantity = dto.Quantity,
+                        Level = dto.Level,
+                        Description = dto.Description,
+                        StartDate = DateTime.TryParse(dto.StartDate, out var sd) ? sd : null,
+                        EndDate = DateTime.TryParse(dto.EndDate, out var ed) ? ed : null,
+                        Active = dto.Active,
+                        CompanyId = dto.Company.Id,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // Check and assign skills
+                    if (dto.Skills != null && dto.Skills.Any())
+                    {
+                        var skillIds = dto.Skills.Select(s => s.Id).ToList();
+                        var dbSkills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
+                        if (dbSkills.Count != skillIds.Count)
+                        {
+                            failedJobs.Add($"{dto.Name} (Một hoặc nhiều Skill ID không tồn tại)");
+                            continue;
+                        }
+                        job.Skills = dbSkills;
+                    }
+
+                    _context.Jobs.Add(job);
+                    await _context.SaveChangesAsync();
+                    success++;
+                }
+                catch (Exception ex)
+                {
+                    failedJobs.Add($"{dto.Name} (Lỗi hệ thống: {ex.Message})");
+                }
+            }
+
+            return new ResBulkCreateJobDTO(total, success, total - success, failedJobs);
         }
     }
 }

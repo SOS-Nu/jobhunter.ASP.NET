@@ -295,10 +295,7 @@ namespace JobZone.ASP.NET.DTOs.Request
         public string Name { get; set; } = null!;
     }
 
-    public class ReqBulkCreateSkillDTO
-    {
-        public string Name { get; set; } = null!;
-    }
+
 
     // ========================
     // PAYMENT DTOs

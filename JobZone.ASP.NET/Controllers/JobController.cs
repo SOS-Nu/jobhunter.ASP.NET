@@ -50,6 +50,13 @@ namespace JobZone.ASP.NET.Controllers
             return StatusCode(201, result);
         }
 
+        [HttpPost("jobs/bulk-create")]
+        [ApiMessage("Create bulk list job")]
+        public async Task<IActionResult> BulkCreate([FromBody] List<JobBulkCreateDTO> jobDTOs)
+        {
+            return StatusCode(201, await _jobService.HandleBulkCreateJobsAsync(jobDTOs));
+        }
+
         [HttpPut("jobs")]
         [ApiMessage("Update a job")]
         public async Task<IActionResult> Update([FromBody] ReqUpdateJobDTO dto)

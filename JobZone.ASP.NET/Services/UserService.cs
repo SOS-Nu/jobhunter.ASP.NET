@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using JobZone.ASP.NET.Data;
+using JobZone.ASP.NET.DTOs.Request;
 using JobZone.ASP.NET.DTOs.Response;
 using JobZone.ASP.NET.Entities;
 using JobZone.ASP.NET.Middleware;
@@ -44,6 +46,7 @@ namespace JobZone.ASP.NET.Services
         bool CanSubmitCv(string email);
         Task IncrementCvSubmissionAsync(string email);
         Task ResetVipAndCvCountsAsync();
+        Task<ResBulkCreateUserDTO> HandleBulkCreateUsersAsync(List<UserBulkCreateDTO> userDTOs);
     }
 
     public class UserService : IUserService
@@ -677,6 +680,55 @@ namespace JobZone.ASP.NET.Services
                 user.Status = status;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<ResBulkCreateUserDTO> HandleBulkCreateUsersAsync(List<UserBulkCreateDTO> userDTOs)
+        {
+            int total = userDTOs.Count;
+            int success = 0;
+            var failedEmails = new List<string>();
+
+            foreach (var dto in userDTOs)
+            {
+                try
+                {
+                    if (await IsEmailExistAsync(dto.Email))
+                    {
+                        failedEmails.Add($"{dto.Email} (Email đã tồn tại)");
+                        continue;
+                    }
+
+                    // Check and assign role
+                    var role = await _context.Roles.FindAsync(dto.Role.Id);
+                    if (role == null)
+                    {
+                        failedEmails.Add($"{dto.Email} (Role ID không tồn tại)");
+                        continue;
+                    }
+
+                    var user = new User
+                    {
+                        Name = dto.Name,
+                        Email = dto.Email,
+                        Gender = dto.Gender,
+                        Address = dto.Address,
+                        Age = dto.Age,
+                        RoleId = dto.Role.Id,
+                        Password = BCrypt.Net.BCrypt.HashPassword("123456"),
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                    success++;
+                }
+                catch (Exception ex)
+                {
+                    failedEmails.Add($"{dto.Email} (Lỗi hệ thống: {ex.Message})");
+                }
+            }
+
+            return new ResBulkCreateUserDTO(total, success, total - success, failedEmails);
         }
     }
 }
