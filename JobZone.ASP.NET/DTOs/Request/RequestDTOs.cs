@@ -191,6 +191,8 @@ namespace JobZone.ASP.NET.DTOs.Request
     {
         public long Id { get; set; }
         public ResumeStateEnum? Status { get; set; }
+        public string? Url { get; set; }
+        public string? CoverLetter { get; set; }
     }
 
     // ========================

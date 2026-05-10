@@ -13,6 +13,7 @@ namespace JobZone.ASP.NET.Services
     {
         Task<PaginatedResponse<ResJobWithScoreDTO>> FindJobsWithAIAsync(string? skillsDescription, IFormFile? file, int page, int pageSize);
         Task<ResCvEvaluationDTO> EvaluateCandidateCvAsync(IFormFile? cvFile, string language);
+        Task<int> ScoreCvAsync(Job job, string cvFileName);
     }
 
     public class GeminiService : IGeminiService
@@ -22,150 +23,182 @@ namespace JobZone.ASP.NET.Services
         private readonly AppDbContext _context;
         private readonly IJobService _jobService;
         private readonly IUserService _userService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IFileService _fileService;
         private readonly HttpClient _httpClient;
         private readonly ILogger<GeminiService> _logger;
+
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
         public GeminiService(
             IConfiguration config,
             AppDbContext context,
             IJobService jobService,
             IUserService userService,
+            ICurrentUserService currentUserService,
+            IFileService fileService,
             HttpClient httpClient,
             ILogger<GeminiService> logger)
         {
             _apiKey = config["Gemini:ApiKey"] ?? "";
+            // Use v1beta for advanced features like responseMimeType
             _apiUrl = config["Gemini:ApiUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
             _context = context;
             _jobService = jobService;
             _userService = userService;
+            _currentUserService = currentUserService;
+            _fileService = fileService;
             _httpClient = httpClient;
             _logger = logger;
         }
 
         public async Task<PaginatedResponse<ResJobWithScoreDTO>> FindJobsWithAIAsync(string? skillsDescription, IFormFile? file, int page, int pageSize)
         {
-            _logger.LogInformation(">>> [AI Search] Finding jobs with filters and ranking...");
+            _logger.LogInformation(">>> [AI Search] Finding jobs with ranking...");
 
-            // 1. Get recent active jobs (limit to 100 for ranking)
             var jobs = await _context.Jobs
                 .Include(j => j.Company)
                 .Include(j => j.Skills)
                 .Where(j => j.Active)
                 .OrderByDescending(j => j.CreatedAt)
-                .Take(100)
+                .Take(50)
                 .ToListAsync();
 
             if (!jobs.Any()) return new PaginatedResponse<ResJobWithScoreDTO>();
 
-            // 2. Build Prompt
-            var jobsJson = ConvertJobsToJson(jobs);
-            var prompt = $@"Act as a STRICT Job Filter. Match jobs to USER QUERY or CV.
-USER QUERY: '{skillsDescription}'
-AVAILABLE JOBS: {jobsJson}
-
---- STRICT FILTERING RULES ---
-1. SALARY: If user asks for specific salary X, accept ONLY range [X-15%, X+15%]. Outside = REJECT.
-2. LOCATION: Exact City match required (e.g. HCM != Hanoi). Different City = REJECT.
-3. RELEVANCE: Tech stack/Title must match intent. Irrelevant = REJECT.
-
---- OUTPUT FORMAT ---
-Return a JSON object with a key 'results' which is an array: {{""results"": [{{""jobId"": 123, ""score"": 90}}]}}.
-IMPORTANT: If a job is REJECTED or Score < 50, DO NOT include it in the output array. Return {{""results"": []}} if no jobs match.";
-
-            // 3. Call Gemini
-            byte[]? fileBytes = null;
-            string? mimeType = null;
-            if (file != null)
+            string cvText = "";
+            if (file != null && file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                fileBytes = ms.ToArray();
-                mimeType = file.ContentType;
+                cvText = _fileService.ExtractTextFromPdf(file);
             }
 
-            var scores = await CallGeminiForListAsync<GeminiJobScore>(prompt, fileBytes, mimeType);
+            var jobsJson = ConvertJobsToJson(jobs);
+            var prompt = $@"Act as a Senior Recruiter. Match jobs to the provided query or CV.
+STRICT RULE: Return ONLY a valid JSON object with key 'results'.
+QUERY: {skillsDescription}
+CV CONTENT: {cvText}
+JOBS DATA: {jobsJson}
 
-            // 4. Map and Sort
+OUTPUT FORMAT:
+{{
+  ""results"": [
+    {{ ""jobId"": 1, ""score"": 90 }}
+  ]
+}}";
+
+            var scores = await CallGeminiForListAsync<GeminiJobScore>(prompt);
             var scoreMap = scores.ToDictionary(s => s.JobId, s => s.Score);
+            
             var allResults = jobs
                 .Where(j => scoreMap.ContainsKey(j.Id))
                 .Select(j => new ResJobWithScoreDTO(scoreMap[j.Id], _jobService.ConvertToResFetchJobDTO(j)))
                 .OrderByDescending(r => r.Score)
                 .ToList();
 
-            // 5. Paginate
             return ManualPaginate(allResults, page, pageSize);
         }
 
         public async Task<ResCvEvaluationDTO> EvaluateCandidateCvAsync(IFormFile? cvFile, string language)
         {
-            _logger.LogInformation(">>> [AI CV Evaluation] Analyzing CV...");
+            _logger.LogInformation(">>> [AI CV Evaluation] Processing...");
 
-            // 1. Get current user's online resume if file is missing
-            string? cvText = null;
-            byte[]? fileBytes = null;
-            string? mimeType = null;
-
-            if (cvFile != null)
+            string cvText = "";
+            if (cvFile != null && cvFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                using var ms = new MemoryStream();
-                await cvFile.CopyToAsync(ms);
-                fileBytes = ms.ToArray();
-                mimeType = cvFile.ContentType;
-            }
-            else
-            {
-                // Fallback to online resume of current user (this requires current user ID)
-                // For simplicity in this DTO version, we'll focus on the file upload first.
-                cvText = "Please analyze the attached CV or candidate details provided.";
+                cvText = _fileService.ExtractTextFromPdf(cvFile);
             }
 
-            // 2. Get some recent jobs for context
-            var recentJobs = await _context.Jobs
-                .Include(j => j.Company)
-                .Include(j => j.Skills)
-                .Where(j => j.Active)
-                .OrderByDescending(j => j.CreatedAt)
-                .Take(30)
-                .ToListAsync();
+            if (string.IsNullOrEmpty(cvText))
+            {
+                var email = _currentUserService.GetCurrentUserEmail();
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var user = await _context.Users
+                        .Include(u => u.OnlineResume).ThenInclude(r => r!.Skills)
+                        .Include(u => u.WorkExperiences)
+                        .FirstOrDefaultAsync(u => u.Email == email);
+                    
+                    if (user != null)
+                    {
+                        if (!string.IsNullOrEmpty(user.MainResume))
+                        {
+                            cvText = _fileService.ExtractTextFromPdf(user.MainResume, "resumes");
+                        }
+                        if (string.IsNullOrEmpty(cvText))
+                        {
+                            cvText = BuildTextFromOnlineResume(user);
+                        }
+                    }
+                }
+            }
 
-            var jobsJson = ConvertJobsToJson(recentJobs);
-            var prompt = BuildCvEvaluationPrompt(cvText ?? "Analyze the candidate", jobsJson, language);
+            if (string.IsNullOrEmpty(cvText)) cvText = "No CV data available.";
+            
+            var recentJobs = await _context.Jobs.Include(j => j.Company).Include(j => j.Skills)
+                .Where(j => j.Active).OrderByDescending(j => j.CreatedAt).Take(30).ToListAsync();
 
-            // 3. Call Gemini
-            return await CallGeminiAsync<ResCvEvaluationDTO>(prompt, fileBytes, mimeType) ?? new ResCvEvaluationDTO();
+            var prompt = BuildCvEvaluationPrompt(cvText, ConvertJobsToJson(recentJobs), language);
+            var result = await CallGeminiAsync<ResCvEvaluationDTO>(prompt);
+            
+            return result ?? new ResCvEvaluationDTO { Summary = "AI failed to respond properly. Check logs." };
         }
 
-        private async Task<T?> CallGeminiAsync<T>(string prompt, byte[]? fileBytes = null, string? mimeType = null)
+        public async Task<int> ScoreCvAsync(Job job, string cvFileName)
         {
             try
             {
-                var contents = new List<object>();
-                var parts = new List<object> { new { text = prompt } };
-
-                if (fileBytes != null && mimeType != null)
+                _logger.LogInformation(">>> [AI Scoring] Scoring CV {FileName} against Job {JobId}", cvFileName, job.Id);
+                
+                string cvText = _fileService.ExtractTextFromPdf(cvFileName, "resume");
+                if (string.IsNullOrEmpty(cvText))
                 {
-                    parts.Add(new
-                    {
-                        inline_data = new
-                        {
-                            mime_type = mimeType,
-                            data = Convert.ToBase64String(fileBytes)
-                        }
-                    });
+                    _logger.LogWarning(">>> [AI Scoring] CV Text is empty in 'resume' folder. Trying root folder...");
+                    cvText = _fileService.ExtractTextFromPdf(cvFileName, ""); 
                 }
 
-                contents.Add(new { parts });
+                if (string.IsNullOrEmpty(cvText)) return 0;
 
+                var prompt = $@"As an expert HR, evaluate this resume against the job description.
+Return ONLY a JSON object: {{""score"": number (0-100)}}.
+
+Job Details:
+Title: {job.Name}
+Description: {job.Description}
+Level: {job.Level}
+
+Resume Text:
+{cvText}";
+
+                var result = await CallGeminiAsync<GeminiScoreResponse>(prompt);
+                return result?.Score ?? 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error scoring CV with AI");
+                return 0;
+            }
+        }
+
+        private class GeminiScoreResponse { public int Score { get; set; } }
+
+        private async Task<T?> CallGeminiAsync<T>(string prompt)
+        {
+            try
+            {
                 var requestBody = new
                 {
-                    contents,
-                    generationConfig = new
-                    {
-                        temperature = 0.2,
+                    contents = new[] { new { parts = new[] { new { text = prompt } } } },
+                    generationConfig = new 
+                    { 
+                        temperature = 0.2, 
                         topP = 0.95,
                         maxOutputTokens = 8000,
-                        responseMimeType = "application/json"
+                        responseMimeType = "application/json" 
                     }
                 };
 
@@ -175,85 +208,119 @@ IMPORTANT: If a job is REJECTED or Score < 50, DO NOT include it in the output a
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Gemini API Error: {Error}", error);
+                    _logger.LogError("Gemini API Error: {Status} - {Error}", response.StatusCode, error);
                     return default;
                 }
 
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                var doc = JsonDocument.Parse(jsonResponse);
-                var text = doc.RootElement
-                    .GetProperty("candidates")[0]
-                    .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
-                    .GetString();
+                var json = await response.Content.ReadAsStringAsync();
+                var doc = JsonDocument.Parse(json);
+                
+                if (!doc.RootElement.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
+                {
+                    _logger.LogWarning("Gemini returned no candidates.");
+                    return default;
+                }
+
+                var text = candidates[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
 
                 if (string.IsNullOrEmpty(text)) return default;
-
-                return JsonSerializer.Deserialize<T>(text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                string cleaned = CleanJson(text);
+                try 
+                {
+                    return JsonSerializer.Deserialize<T>(cleaned, _jsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "Failed to deserialize Gemini response: {RawText}", text);
+                    return default;
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling Gemini API");
+                _logger.LogError(ex, "Exception in CallGeminiAsync");
                 return default;
             }
         }
 
-        private async Task<List<T>> CallGeminiForListAsync<T>(string prompt, byte[]? fileBytes = null, string? mimeType = null)
+        private string CleanJson(string raw)
         {
-            var result = await CallGeminiAsync<GeminiListResponse<T>>(prompt, fileBytes, mimeType);
+            if (string.IsNullOrWhiteSpace(raw)) return "{}";
+            var cleaned = raw.Trim();
+            if (cleaned.StartsWith("```json")) cleaned = cleaned.Substring(7);
+            else if (cleaned.StartsWith("```")) cleaned = cleaned.Substring(3);
+            if (cleaned.EndsWith("```")) cleaned = cleaned.Substring(0, cleaned.Length - 3);
+            return cleaned.Trim();
+        }
+
+        private async Task<List<T>> CallGeminiForListAsync<T>(string prompt)
+        {
+            var result = await CallGeminiAsync<GeminiListResponse<T>>(prompt);
             return result?.Results ?? new List<T>();
         }
 
         private string ConvertJobsToJson(List<Job> jobs)
         {
-            var simplified = jobs.Select(job => new
-            {
-                id = job.Id,
-                title = job.Name,
-                skills = job.Skills.Select(s => s.Name).ToList(),
-                desc = job.Description != null ? (job.Description.Length > 500 ? job.Description.Substring(0, 500) + "..." : job.Description) : "",
-                loc = job.Location,
-                salary = job.Salary.ToString("F0"),
-                lvl = job.Level.ToString(),
-                comp = job.Company?.Name,
-                field = job.Company?.Field,
-                scale = job.Company?.Scale
-            });
-
-            return JsonSerializer.Serialize(simplified);
+            var list = jobs.Select(j => new {
+                id = j.Id, 
+                title = j.Name, 
+                skills = j.Skills.Select(s => s.Name),
+                loc = j.Location, 
+                salary = j.Salary.ToString("F0"), 
+                comp = j.Company?.Name
+            }).ToList();
+            return JsonSerializer.Serialize(list);
         }
 
-        private PaginatedResponse<T> ManualPaginate<T>(List<T> allResults, int page, int pageSize)
+        private PaginatedResponse<T> ManualPaginate<T>(List<T> all, int page, int size)
         {
-            int start = (page - 1) * pageSize;
-            var pageContent = allResults.Skip(start).Take(pageSize).ToList();
-
-            return new PaginatedResponse<T>
-            {
-                Meta = new PaginationMeta
-                {
-                    Page = page,
-                    PageSize = pageSize,
-                    Total = allResults.Count,
-                    Pages = (int)Math.Ceiling((double)allResults.Count / pageSize)
-                },
-                Result = pageContent
+            return new PaginatedResponse<T> {
+                Result = all.Skip((page - 1) * size).Take(size).ToList(),
+                Meta = new PaginationMeta { 
+                    Page = page, 
+                    PageSize = size, 
+                    Total = all.Count, 
+                    Pages = (int)Math.Ceiling((double)all.Count / size) 
+                }
             };
         }
 
-        private string BuildCvEvaluationPrompt(string cvText, string jobsJson, string language)
+        private string BuildTextFromOnlineResume(User u)
         {
-            string languageInstruction = language.Equals("en", StringComparison.OrdinalIgnoreCase)
-                ? "You must provide the entire response in English. All keys and values in the JSON must be in English."
-                : "Bạn phải cung cấp toàn bộ phản hồi bằng Tiếng Việt. Mọi khóa và giá trị trong JSON phải là Tiếng Việt.";
+            if (u.OnlineResume == null) return "";
+            var sb = new StringBuilder();
+            sb.AppendLine($"Title: {u.OnlineResume.Title}");
+            sb.AppendLine($"Name: {u.OnlineResume.FullName}");
+            sb.AppendLine($"Summary: {u.OnlineResume.Summary}");
+            if (u.OnlineResume.Skills != null) sb.AppendLine("Skills: " + string.Join(", ", u.OnlineResume.Skills.Select(s => s.Name)));
+            if (u.WorkExperiences != null) 
+            {
+                sb.AppendLine("Work Experiences:");
+                foreach (var ex in u.WorkExperiences) sb.AppendLine($"- {ex.CompanyName}: {ex.Description}");
+            }
+            return sb.ToString();
+        }
 
-            return $@"You are an expert HR and career advisor. {languageInstruction}
-Analyze the attached CV/Details. Provide evaluation in a single JSON object.
-JSON STRUCTURE: {{""overallScore"": number, ""summary"": string, ""strengths"": string[], ""improvements"": [{{""area"": string, ""suggestion"": string}}], ""estimatedSalaryRange"": string, ""suggestedRoadmap"": [{{""step"": number, ""action"": string, ""reason"": string}}], ""relevantJobs"": [{{""jobId"": number, ""jobTitle"": string, ""companyName"": string, ""matchReason"": string}}]}}.
+        private string BuildCvEvaluationPrompt(string cv, string jobs, string lang)
+        {
+            string instr = lang == "en" ? "Response ALL string values in English." : "Phản hồi toàn bộ giá trị string bằng Tiếng Việt.";
+            return $@"You are an expert HR. {instr}
+Analyze the candidate's CV against market standards and available jobs.
+Return ONLY a valid JSON object matching the requested structure.
 
-CANDIDATE DETAILS: {cvText}
-AVAILABLE JOBS: {jobsJson}";
+STRUCTURE:
+{{
+  ""overallScore"": 0,
+  ""summary"": ""..."",
+  ""strengths"": [""...""],
+  ""improvements"": [{{ ""area"": ""..."", ""suggestion"": ""..."" }}],
+  ""estimatedSalaryRange"": ""..."",
+  ""suggestedRoadmap"": [{{ ""step"": 1, ""action"": ""..."", ""reason"": ""..."" }}],
+  ""relevantJobs"": [{{ ""jobId"": 1, ""jobTitle"": ""..."", ""companyName"": ""..."", ""matchReason"": ""..."" }}]
+}}
+
+CV DATA: {cv}
+JOBS DATA: {jobs}";
         }
 
         private class GeminiJobScore { public long JobId { get; set; } public int Score { get; set; } }

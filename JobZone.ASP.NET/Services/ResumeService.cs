@@ -16,7 +16,7 @@ namespace JobZone.ASP.NET.Services
     public interface IResumeService
     {
         Task<ResCreateResumeDTO> CreateAsync(Resume resume);
-        Task<ResUpdateResumeDTO?> UpdateAsync(long id, ResumeStateEnum? status);
+        Task<ResUpdateResumeDTO?> UpdateAsync(long id, ResumeStateEnum? status, string? url = null, string? coverLetter = null);
         Task DeleteAsync(long id);
         Task<ResFetchResumeDTO?> GetByIdAsync(long id);
         Task<PaginatedResponse<ResFetchResumeDTO>> GetAllAsync(SieveModel sieveModel);
@@ -34,12 +34,31 @@ namespace JobZone.ASP.NET.Services
         private readonly IEmailService _emailService;
         private readonly IChatService _chatService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IGeminiService _geminiService;
+        private readonly ILogger<ResumeService> _logger;
 
-        public ResumeService(AppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserService userService, ISieveProcessor sieveProcessor,
-            IEmailService emailService, IChatService chatService, IHubContext<ChatHub> hubContext)
+        public ResumeService(
+            AppDbContext context, 
+            IMapper mapper, 
+            ICurrentUserService currentUserService, 
+            IUserService userService, 
+            ISieveProcessor sieveProcessor,
+            IEmailService emailService, 
+            IChatService chatService, 
+            IHubContext<ChatHub> hubContext,
+            IGeminiService geminiService,
+            ILogger<ResumeService> logger)
         {
-            _context = context; _mapper = mapper; _currentUserService = currentUserService; _userService = userService; _sieveProcessor = sieveProcessor;
-            _emailService = emailService; _chatService = chatService; _hubContext = hubContext;
+            _context = context; 
+            _mapper = mapper; 
+            _currentUserService = currentUserService; 
+            _userService = userService; 
+            _sieveProcessor = sieveProcessor;
+            _emailService = emailService; 
+            _chatService = chatService; 
+            _hubContext = hubContext;
+            _geminiService = geminiService;
+            _logger = logger;
         }
 
         public async Task<ResCreateResumeDTO> CreateAsync(Resume resume)
@@ -53,7 +72,7 @@ namespace JobZone.ASP.NET.Services
             var job = await _context.Jobs.FindAsync(resume.JobId)
                 ?? throw new IdInvalidException($"Job với id={resume.JobId} không tồn tại");
 
-            // CV submission limit check (matching Java: canSubmitCv + incrementCvSubmission)
+            // CV submission limit check
             if (!_userService.CanSubmitCv(email))
             {
                 throw new IdInvalidException("Bạn đã đạt giới hạn nộp CV trong tháng này. Nâng cấp VIP để nộp thêm.");
@@ -61,12 +80,32 @@ namespace JobZone.ASP.NET.Services
 
             // Check if already applied - delete old and re-apply (matching Spring Boot logic)
             var existing = await _context.Resumes.FirstOrDefaultAsync(r => r.UserId == user.Id && r.JobId == job.Id);
-            if (existing != null) { _context.Resumes.Remove(existing); await _context.SaveChangesAsync(); }
+            if (existing != null) 
+            { 
+                _context.Resumes.Remove(existing); 
+                await _context.SaveChangesAsync(); 
+            }
 
             resume.UserId = user.Id;
             resume.JobId = job.Id;
             resume.Email = email;
             resume.Status = ResumeStateEnum.REVIEWING;
+
+            // AI SCORING LOGIC (Matching Java implementation)
+            int score = 0;
+            if (!string.IsNullOrEmpty(resume.Url))
+            {
+                try
+                {
+                    score = await _geminiService.ScoreCvAsync(job, resume.Url);
+                    _logger.LogInformation(">>> AI Score for CV {FileName} on Job {JobId}: {Score}", resume.Url, job.Id, score);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to score CV with AI for Job {JobId}", job.Id);
+                }
+            }
+            resume.Score = score;
 
             _context.Resumes.Add(resume);
             await _context.SaveChangesAsync();
@@ -77,21 +116,79 @@ namespace JobZone.ASP.NET.Services
             return _mapper.Map<ResCreateResumeDTO>(resume);
         }
 
-        public async Task<ResUpdateResumeDTO?> UpdateAsync(long id, ResumeStateEnum? status)
+        public async Task<ResUpdateResumeDTO?> UpdateAsync(long id, ResumeStateEnum? status, string? url = null, string? coverLetter = null)
         {
             var resume = await _context.Resumes.Include(r => r.Job).FirstOrDefaultAsync(r => r.Id == id);
             if (resume == null) return null;
 
-            resume.Status = status;
+            var email = _currentUserService.GetCurrentUserEmail();
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (currentUser == null) throw new IdInvalidException("Bạn cần đăng nhập để thực hiện thao tác này");
 
-            // If APPROVED, decrease job quantity (matching Spring Boot logic)
-            if (status == ResumeStateEnum.APPROVED && resume.Job != null)
+            bool isEmployer = currentUser.CompanyId != null && resume.Job?.CompanyId == currentUser.CompanyId;
+            bool isOwner = resume.UserId == currentUser.Id;
+
+            // 1. Employer (HR) can update STATUS
+            if (isEmployer && status.HasValue)
             {
-                if (resume.Job.Quantity > 0)
+                _logger.LogInformation(">>> [Update] HR {Email} updating status to {Status} for Resume {Id}", email, status, id);
+                resume.Status = status.Value;
+
+                // If APPROVED, decrease job quantity
+                if (status == ResumeStateEnum.APPROVED && resume.Job != null)
                 {
-                    resume.Job.Quantity--;
-                    if (resume.Job.Quantity == 0) resume.Job.Active = false;
+                    if (resume.Job.Quantity > 0)
+                    {
+                        resume.Job.Quantity--;
+                        if (resume.Job.Quantity == 0) resume.Job.Active = false;
+                    }
                 }
+            }
+
+            // 2. User (Owner) can update URL and COVER LETTER
+            if (isOwner)
+            {
+                if (!string.IsNullOrEmpty(coverLetter))
+                {
+                    resume.CoverLetter = coverLetter;
+                }
+
+                if (!string.IsNullOrEmpty(url) && url != resume.Url)
+                {
+                    _logger.LogInformation(">>> [Update] Owner {Email} updating CV URL to {New}. Re-scoring...", email, url);
+                    resume.Url = url;
+                    
+                    if (resume.Job != null)
+                    {
+                        try
+                        {
+                            resume.Score = await _geminiService.ScoreCvAsync(resume.Job, resume.Url);
+                            _logger.LogInformation(">>> AI Score re-calculated: {Score}", resume.Score);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to re-score CV during update");
+                        }
+                    }
+                }
+            }
+
+            // Fallback for missing score (only if score is 0 and we are updating something)
+            if (resume.Score <= 0 && !string.IsNullOrEmpty(resume.Url) && resume.Job != null && (isOwner || isEmployer))
+            {
+                try
+                {
+                    resume.Score = await _geminiService.ScoreCvAsync(resume.Job, resume.Url);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to score CV during update fallback");
+                }
+            }
+
+            if (!isEmployer && !isOwner)
+            {
+                throw new IdInvalidException("Bạn không có quyền cập nhật hồ sơ này");
             }
 
             await _context.SaveChangesAsync();
@@ -110,7 +207,6 @@ namespace JobZone.ASP.NET.Services
             if (resume == null) return null;
 
             var dto = _mapper.Map<ResFetchResumeDTO>(resume);
-            // Privacy: only show email if user is public (matching Spring Boot logic)
             if (resume.User != null && !resume.User.IsPublic) dto.Email = null;
             return dto;
         }
@@ -120,7 +216,6 @@ namespace JobZone.ASP.NET.Services
             var page = sieveModel.Page ?? 1;
             var pageSize = sieveModel.PageSize ?? 10;
 
-            // Company-scoped access (matching Spring Boot logic)
             var email = _currentUserService.GetCurrentUserEmail();
             if (string.IsNullOrEmpty(email))
                 return new PaginatedResponse<ResFetchResumeDTO> { Meta = new PaginationMeta { Page = page, PageSize = pageSize }, Result = new List<ResFetchResumeDTO>() };
@@ -171,7 +266,6 @@ namespace JobZone.ASP.NET.Services
             if (resume.Status != ResumeStateEnum.APPROVED)
                 throw new IdInvalidException("Resume phải ở trạng thái APPROVED mới có thể gửi thông báo");
 
-            // 1. Send Email
             await _emailService.SendApprovalEmailAsync(
                 resume.User.Email,
                 resume.User.Name,
@@ -179,7 +273,6 @@ namespace JobZone.ASP.NET.Services
                 resume.Job.Company?.Name ?? "Công ty"
             );
 
-            // 2. Send Chat Message via SignalR
             var hrEmail = _currentUserService.GetCurrentUserEmail() ?? "";
             var hr = await _context.Users.FirstOrDefaultAsync(u => u.Email == hrEmail);
             
@@ -197,7 +290,6 @@ namespace JobZone.ASP.NET.Services
 
                 var savedMsg = await _chatService.SaveMessageAsync(chatMessage);
 
-                // Broadcast via SignalR (mimicking ChatHub.SendMessage logic)
                 await _hubContext.Clients.User(resume.User.Email).SendAsync("ReceiveMessage", new JobZone.ASP.NET.DTOs.Request.ChatNotificationDTO
                 {
                     Id = savedMsg.Id,

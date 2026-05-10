@@ -11,6 +11,8 @@ namespace JobZone.ASP.NET.Services
         long GetFileLength(string fileName, string folder);
         Stream GetResource(string fileName, string folder);
         string GetContentType(string fileName);
+        string ExtractTextFromPdf(IFormFile file);
+        string ExtractTextFromPdf(string fileName, string folder);
     }
 
     public class FileService : IFileService
@@ -128,6 +130,57 @@ namespace JobZone.ASP.NET.Services
             temp = Regex.Replace(temp, "-+", "-");
 
             return temp;
+        }
+        public string ExtractTextFromPdf(IFormFile file)
+        {
+            try
+            {
+                using var stream = file.OpenReadStream();
+                using var document = UglyToad.PdfPig.PdfDocument.Open(stream);
+                var sb = new StringBuilder();
+                foreach (var page in document.GetPages())
+                {
+                    sb.Append(page.Text);
+                }
+                var text = sb.ToString();
+                _logger.LogInformation(">>> PDF EXTRACTED ({FileName}): {Length} chars", file.FileName, text.Length);
+                return text;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(">>> ERROR EXTRACTING PDF ({FileName}): {Message}", file.FileName, ex.Message);
+                return string.Empty;
+            }
+        }
+
+        public string ExtractTextFromPdf(string fileName, string folder)
+        {
+            try
+            {
+                var filePath = Path.Combine(_baseUri, folder, fileName);
+                _logger.LogInformation(">>> [FileService] Extracting PDF from: {Path}", filePath);
+
+                if (!File.Exists(filePath))
+                {
+                    _logger.LogWarning(">>> [FileService] File NOT FOUND: {Path}", filePath);
+                    return string.Empty;
+                }
+
+                using var document = UglyToad.PdfPig.PdfDocument.Open(filePath);
+                var sb = new StringBuilder();
+                foreach (var page in document.GetPages())
+                {
+                    sb.Append(page.Text);
+                }
+                var text = sb.ToString();
+                _logger.LogInformation(">>> PDF EXTRACTED ({FileName}): {Length} chars", fileName, text.Length);
+                return text;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(">>> ERROR EXTRACTING STORED PDF ({FileName}): {Message}", fileName, ex.Message);
+                return string.Empty;
+            }
         }
     }
 }

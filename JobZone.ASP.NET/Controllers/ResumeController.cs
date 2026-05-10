@@ -37,7 +37,7 @@ namespace JobZone.ASP.NET.Controllers
         [ApiMessage("Update a resume")]
         public async Task<IActionResult> Update([FromBody] ReqUpdateResumeDTO dto)
         {
-            var result = await _resumeService.UpdateAsync(dto.Id, dto.Status)
+            var result = await _resumeService.UpdateAsync(dto.Id, dto.Status, dto.Url, dto.CoverLetter)
                 ?? throw new IdInvalidException($"Resume với id = {dto.Id} không tồn tại");
             return Ok(result);
         }

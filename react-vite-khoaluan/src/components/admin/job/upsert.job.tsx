@@ -1,4 +1,25 @@
 import {
+  callCreateJob,
+  callCreateJobForCompany,
+  callFetchAllSkill,
+  callFetchCompany,
+  callFetchJobById,
+  callUpdateJob,
+  callUpdateJobForCompany,
+} from "@/config/api";
+import { LOCATION_LIST } from "@/config/utils";
+import { useAppSelector } from "@/redux/hooks";
+import { IJob, ISkill, IUser } from "@/types/backend";
+import { CheckSquareOutlined } from "@ant-design/icons";
+import {
+  FooterToolbar,
+  ProForm,
+  ProFormDigit,
+  ProFormSelect,
+  ProFormSwitch,
+  ProFormText
+} from "@ant-design/pro-components";
+import {
   Breadcrumb,
   Col,
   ConfigProvider,
@@ -9,41 +30,16 @@ import {
   message,
   notification,
 } from "antd";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { DebounceSelect } from "../user/debouce.select";
-import {
-  FooterToolbar,
-  ProForm,
-  ProFormDatePicker,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormText,
-} from "@ant-design/pro-components";
-import styles from "styles/admin.module.scss";
-import { LOCATION_LIST, SKILLS_LIST } from "@/config/utils";
-import { ICompanySelect } from "../user/modal.user";
-import { useState, useEffect } from "react";
-import {
-  callCreateJob,
-  callCreateJobForCompany,
-  callFetchAllSkill,
-  callFetchCompany,
-  callFetchJobById,
-  callUpdateJob,
-  callUpdateJobForCompany,
-} from "@/config/api";
+import viVN from "antd/lib/locale/vi_VN";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { CheckSquareOutlined } from "@ant-design/icons";
-import enUS from "antd/lib/locale/en_US";
-import dayjs from "dayjs";
-import { IJob, ISkill, IUser } from "@/types/backend";
-import { useAppSelector } from "@/redux/hooks";
-import viVN from "antd/lib/locale/vi_VN";
-import { theme as antdTheme } from "antd";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import styles from "styles/admin.module.scss";
+import { DebounceSelect } from "../user/debouce.select";
+import { ICompanySelect } from "../user/modal.user";
 
-import { useCurrentApp } from "@/components/context/app.context";
 
 interface ISkillSelect {
   label: string;
@@ -138,8 +134,8 @@ const ViewUpsertJob = (props: any) => {
     } else return [];
   }
 
-  async function fetchSkillList(): Promise<ISkillSelect[]> {
-    const res = await callFetchAllSkill(`page=1&size=100`);
+  async function fetchSkillList(name: string): Promise<ISkillSelect[]> {
+    const res = await callFetchAllSkill(`page=1&pageSize=100&name@=${name}`);
     if (res && res.data) {
       const list = res.data.result;
       const temp = list.map((item) => {
@@ -281,20 +277,27 @@ const ViewUpsertJob = (props: any) => {
                 />
               </Col>
               <Col span={24} md={6}>
-                <ProFormSelect
+                <ProForm.Item
                   name="skills"
                   label="Kỹ năng yêu cầu"
-                  options={skills}
-                  placeholder="Please select a skill"
                   rules={[
                     { required: true, message: "Vui lòng chọn kỹ năng!" },
                   ]}
-                  allowClear
-                  mode="multiple"
-                  fieldProps={{
-                    suffixIcon: null,
-                  }}
-                />
+                >
+                  <DebounceSelect
+                    allowClear
+                    showSearch
+                    mode="multiple"
+                    defaultValue={skills}
+                    value={skills}
+                    placeholder="Chọn kỹ năng"
+                    fetchOptions={fetchSkillList}
+                    onChange={(newValue: any) => {
+                      setSkills(newValue as ISkillSelect[]);
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </ProForm.Item>
               </Col>
 
               <Col span={24} md={6}>
