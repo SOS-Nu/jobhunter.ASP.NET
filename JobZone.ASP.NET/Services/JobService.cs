@@ -24,6 +24,7 @@ namespace JobZone.ASP.NET.Services
         Task<ResUpdateJobDTO> UpdateForUserCompanyAsync(DTOs.Request.ReqUpdateJobDTO dto);
         Task DeleteForUserCompanyAsync(long id);
         Task<ResBulkCreateJobDTO> HandleBulkCreateJobsAsync(List<JobBulkCreateDTO> jobDTOs);
+        ResFetchJobDTO ConvertToResFetchJobDTO(Job job);
     }
 
     public class JobService : IJobService
@@ -327,6 +328,10 @@ namespace JobZone.ASP.NET.Services
             }
 
             return new ResBulkCreateJobDTO(total, success, total - success, failedJobs);
+        }
+        public ResFetchJobDTO ConvertToResFetchJobDTO(Job job)
+        {
+            return _mapper.Map<ResFetchJobDTO>(job);
         }
     }
 }

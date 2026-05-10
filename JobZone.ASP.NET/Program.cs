@@ -129,6 +129,8 @@ try
     builder.Services.AddScoped<IDashboardService, DashboardService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<IUserSaveJobService, UserSaveJobService>();
+    builder.Services.AddScoped<IGeminiService, GeminiService>();
+    builder.Services.AddHttpClient();
     builder.Services.Configure<Sieve.Models.SieveOptions>(options =>
     {
         options.DefaultPageSize = 10;
