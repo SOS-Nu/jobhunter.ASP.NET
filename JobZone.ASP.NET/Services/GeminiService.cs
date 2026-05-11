@@ -12,6 +12,7 @@ namespace JobZone.ASP.NET.Services
     public interface IGeminiService
     {
         Task<PaginatedResponse<ResJobWithScoreDTO>> FindJobsWithAIAsync(string? skillsDescription, IFormFile? file, int page, int pageSize);
+        Task<PaginatedResponse<ResCandidateWithScoreDTO>> FindCandidatesWithAIAsync(string? jobDescription, IFormFile? file, int page, int pageSize);
         Task<ResCvEvaluationDTO> EvaluateCandidateCvAsync(IFormFile? cvFile, string language);
         Task<int> ScoreCvAsync(Job job, string cvFileName);
     }
@@ -47,7 +48,7 @@ namespace JobZone.ASP.NET.Services
         {
             _apiKey = config["Gemini:ApiKey"] ?? "";
             // Use v1beta for advanced features like responseMimeType
-            _apiUrl = config["Gemini:ApiUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+            _apiUrl = config["Gemini:ApiUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
             _context = context;
             _jobService = jobService;
             _userService = userService;
@@ -97,6 +98,51 @@ OUTPUT FORMAT:
             var allResults = jobs
                 .Where(j => scoreMap.ContainsKey(j.Id))
                 .Select(j => new ResJobWithScoreDTO(scoreMap[j.Id], _jobService.ConvertToResFetchJobDTO(j)))
+                .OrderByDescending(r => r.Score)
+                .ToList();
+
+            return ManualPaginate(allResults, page, pageSize);
+        }
+
+        public async Task<PaginatedResponse<ResCandidateWithScoreDTO>> FindCandidatesWithAIAsync(string? jobDescription, IFormFile? file, int page, int pageSize)
+        {
+            _logger.LogInformation(">>> [AI Candidate Search] Finding candidates with ranking...");
+
+            var users = await _context.Users
+                .Include(u => u.OnlineResume).ThenInclude(r => r!.Skills)
+                .Include(u => u.WorkExperiences)
+                .Where(u => u.IsPublic == true)
+                .OrderByDescending(u => u.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+
+            if (!users.Any()) return new PaginatedResponse<ResCandidateWithScoreDTO>();
+
+            string finalJobDescription = jobDescription ?? "";
+            if (file != null && file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                finalJobDescription = _fileService.ExtractTextFromPdf(file);
+            }
+
+            var candidatesJson = await ConvertUsersToJsonAsync(users);
+            var prompt = $@"Act as a Senior HR Headhunter. Match candidates to the provided Job Description.
+STRICT RULE: Return ONLY a valid JSON object with key 'results'.
+JOB DESCRIPTION: {finalJobDescription}
+CANDIDATES DATA: {candidatesJson}
+
+OUTPUT FORMAT:
+{{
+  ""results"": [
+    {{ ""userId"": 1, ""score"": 90 }}
+  ]
+}}";
+
+            var scores = await CallGeminiForListAsync<GeminiCandidateScore>(prompt);
+            var scoreMap = scores.ToDictionary(s => s.UserId, s => s.Score);
+
+            var allResults = users
+                .Where(u => scoreMap.ContainsKey(u.Id))
+                .Select(u => new ResCandidateWithScoreDTO(scoreMap[u.Id], _userService.ConvertToResUserDetailDTO(u)))
                 .OrderByDescending(r => r.Score)
                 .ToList();
 
@@ -272,6 +318,40 @@ Resume Text:
             return JsonSerializer.Serialize(list);
         }
 
+        private async Task<string> ConvertUsersToJsonAsync(List<User> users)
+        {
+            var list = new List<object>();
+            foreach (var u in users)
+            {
+                // 1. Get structured text from Online Resume (including Skill Names)
+                string onlineResumeText = BuildTextFromOnlineResume(u);
+
+                // 2. Extract text from uploaded CV file (MainResume) if available
+                string fileResumeText = "";
+                if (!string.IsNullOrEmpty(u.MainResume))
+                {
+                    try
+                    {
+                        // Prioritize "resumes" folder as per Java logic
+                        fileResumeText = _fileService.ExtractTextFromPdf(u.MainResume, "resumes");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("Could not extract text from file {File} for user {UserId}: {Message}", 
+                            u.MainResume, u.Id, ex.Message);
+                    }
+                }
+
+                list.Add(new {
+                    id = u.Id,
+                    name = u.Name,
+                    // Combine both sources for maximum context
+                    resumeContent = (onlineResumeText + "\n" + fileResumeText).Trim()
+                });
+            }
+            return JsonSerializer.Serialize(list);
+        }
+
         private PaginatedResponse<T> ManualPaginate<T>(List<T> all, int page, int size)
         {
             return new PaginatedResponse<T> {
@@ -324,6 +404,7 @@ JOBS DATA: {jobs}";
         }
 
         private class GeminiJobScore { public long JobId { get; set; } public int Score { get; set; } }
+        private class GeminiCandidateScore { public long UserId { get; set; } public int Score { get; set; } }
         private class GeminiListResponse<T> { [JsonPropertyName("results")] public List<T>? Results { get; set; } }
     }
 }

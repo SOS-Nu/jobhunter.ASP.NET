@@ -185,6 +185,7 @@ namespace JobZone.ASP.NET.DTOs.Response
         public GenderEnum? Gender { get; set; }
         public string? Address { get; set; }
         public string? MainResume { get; set; }
+        [JsonPropertyName("isPublic")]
         public bool Public { get; set; }
         public string? Avatar { get; set; }
 

@@ -47,6 +47,8 @@ namespace JobZone.ASP.NET.Services
         Task IncrementCvSubmissionAsync(string email);
         Task ResetVipAndCvCountsAsync();
         Task<ResBulkCreateUserDTO> HandleBulkCreateUsersAsync(List<UserBulkCreateDTO> userDTOs);
+        ResUserDetailDTO ConvertToResUserDetailDTO(User user);
+        Task<PaginatedResponse<ResUserDetailDTO>> GetCandidatesBySkillsAsync(string skills, SieveModel sieveModel);
     }
 
     public class UserService : IUserService
@@ -729,6 +731,53 @@ namespace JobZone.ASP.NET.Services
             }
 
             return new ResBulkCreateUserDTO(total, success, total - success, failedEmails);
+        }
+
+        public ResUserDetailDTO ConvertToResUserDetailDTO(User user)
+        {
+            var dto = _mapper.Map<ResUserDetailDTO>(user);
+            if (!user.IsPublic && dto.OnlineResume != null)
+            {
+                dto.OnlineResume.Email = null;
+                dto.OnlineResume.Phone = null;
+                dto.OnlineResume.Address = null;
+            }
+            return dto;
+        }
+
+        public async Task<PaginatedResponse<ResUserDetailDTO>> GetCandidatesBySkillsAsync(string skills, SieveModel sieveModel)
+        {
+            var skillList = skills?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList() ?? new List<string>();
+            var query = _context.Users
+                .Include(u => u.OnlineResume).ThenInclude(r => r!.Skills)
+                .Include(u => u.WorkExperiences)
+                .Where(u => u.IsPublic == true)
+                .AsQueryable();
+
+            if (skillList.Any())
+            {
+                query = query.Where(u => u.OnlineResume != null && 
+                    u.OnlineResume.Skills.Any(s => skillList.Contains(s.Name)));
+            }
+
+            query = _sieveProcessor.Apply(sieveModel, query, applyPagination: false);
+            var total = await query.CountAsync();
+            var paginatedQuery = _sieveProcessor.Apply(sieveModel, query, applyFiltering: false, applySorting: false, applyPagination: true);
+            var items = await paginatedQuery.ToListAsync();
+
+            var dtos = items.Select(u => ConvertToResUserDetailDTO(u)).ToList();
+
+            return new PaginatedResponse<ResUserDetailDTO>
+            {
+                Meta = new PaginationMeta
+                {
+                    Page = sieveModel.Page ?? 1,
+                    PageSize = sieveModel.PageSize ?? 10,
+                    Pages = (int)Math.Ceiling((double)total / (sieveModel.PageSize ?? 10)),
+                    Total = total
+                },
+                Result = dtos
+            };
         }
     }
 }

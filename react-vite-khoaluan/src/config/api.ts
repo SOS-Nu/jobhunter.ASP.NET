@@ -702,6 +702,12 @@ export const callFindCandidatesWithAI = (
   });
 };
 
+export const callSearchCandidatesBySkills = (skills: string, query: string) => {
+  return axios.get<IBackendRes<IModelPaginate<IUser>>>(
+    `/api/v1/users/search-by-skills?skills=${encodeURIComponent(skills)}&${query}`,
+  );
+};
+
 export const callEvaluateCVWithAI = (formData: FormData) => {
   return axios.post("/api/v1/gemini/evaluate-cv", formData, {
     headers: {

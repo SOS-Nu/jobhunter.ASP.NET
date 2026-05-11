@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace JobZone.ASP.NET.DTOs.Response
 {
@@ -50,13 +51,14 @@ namespace JobZone.ASP.NET.DTOs.Response
     public class ResCandidateWithScoreDTO
     {
         public int Score { get; set; }
-        public ResUserDetailDTO? Candidate { get; set; }
+        [JsonPropertyName("user")]
+        public ResUserDetailDTO? User { get; set; }
 
         public ResCandidateWithScoreDTO() { }
-        public ResCandidateWithScoreDTO(int score, ResUserDetailDTO candidate)
+        public ResCandidateWithScoreDTO(int score, ResUserDetailDTO user)
         {
             Score = score;
-            Candidate = candidate;
+            User = user;
         }
     }
 }

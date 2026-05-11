@@ -124,5 +124,11 @@ namespace JobZone.ASP.NET.Controllers
         {
             return Ok(await _userService.UploadMainResumeAsync(file));
         }
+        [HttpGet("users/search-by-skills")]
+        [ApiMessage("Search candidates by skills")]
+        public async Task<IActionResult> SearchBySkills([FromQuery] string skills, [FromQuery] SieveModel sieveModel)
+        {
+            return Ok(await _userService.GetCandidatesBySkillsAsync(skills, sieveModel));
+        }
     }
 }

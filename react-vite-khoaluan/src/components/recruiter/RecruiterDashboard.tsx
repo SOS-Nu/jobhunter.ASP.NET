@@ -12,6 +12,7 @@ import { ICandidate, IMeta } from "@/types/backend";
 import CandidateResults from "./CandidateResults";
 import CandidateSearchForm from "./CandidateSearchForm";
 import CompanyForm from "./CompanyForm";
+import SkillSearchTab from "./SkillSearchTab";
 
 const RecruiterDashboard = () => {
   const user = useAppSelector((state) => state.account.user);
@@ -110,6 +111,10 @@ const RecruiterDashboard = () => {
             </>
           )}
         </div>
+      </Tab>
+
+      <Tab eventKey="search-by-skills" title="Tìm kiếm theo Skill">
+        <SkillSearchTab />
       </Tab>
 
       {/* <Tab eventKey="manage-jobs" title="Quản lý tin tuyển dụng" disabled>

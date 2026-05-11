@@ -28,6 +28,17 @@ namespace JobZone.ASP.NET.Controllers
             return Ok(result);
         }
 
+        [HttpPost("candidates")]
+        [ApiMessage("Search candidates with AI ranking and filters")]
+        public async Task<IActionResult> FindCandidatesAI(
+            [FromForm] ReqGeminiCandidateSearchDTO dto,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _geminiService.FindCandidatesWithAIAsync(dto.JobDescription, dto.File, page, pageSize);
+            return Ok(result);
+        }
+
         [HttpPost("evaluate-cv")]
         [ApiMessage("Evaluate CV with AI")]
         public async Task<IActionResult> EvaluateCv(
@@ -42,6 +53,12 @@ namespace JobZone.ASP.NET.Controllers
     public class ReqGeminiJobSearchDTO
     {
         public string? SkillsDescription { get; set; }
+        public IFormFile? File { get; set; }
+    }
+
+    public class ReqGeminiCandidateSearchDTO
+    {
+        public string? JobDescription { get; set; }
         public IFormFile? File { get; set; }
     }
 
