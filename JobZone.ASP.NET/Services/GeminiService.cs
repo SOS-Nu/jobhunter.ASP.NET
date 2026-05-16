@@ -109,9 +109,10 @@ OUTPUT FORMAT:
             _logger.LogInformation(">>> [AI Candidate Search] Finding candidates with ranking...");
 
             var users = await _context.Users
+                .Include(u => u.Role)
                 .Include(u => u.OnlineResume).ThenInclude(r => r!.Skills)
                 .Include(u => u.WorkExperiences)
-                .Where(u => u.IsPublic == true)
+                .Where(u => u.IsPublic == true && u.Role.Name == "NORMAL_USER" && u.OnlineResume != null)
                 .OrderByDescending(u => u.CreatedAt)
                 .Take(50)
                 .ToListAsync();

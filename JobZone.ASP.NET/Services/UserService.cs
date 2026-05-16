@@ -749,9 +749,10 @@ namespace JobZone.ASP.NET.Services
         {
             var skillList = skills?.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList() ?? new List<string>();
             var query = _context.Users
+                .Include(u => u.Role)
                 .Include(u => u.OnlineResume).ThenInclude(r => r!.Skills)
                 .Include(u => u.WorkExperiences)
-                .Where(u => u.IsPublic == true)
+                .Where(u => u.IsPublic == true && u.Role.Name == "NORMAL_USER" && u.OnlineResume != null)
                 .AsQueryable();
 
             if (skillList.Any())

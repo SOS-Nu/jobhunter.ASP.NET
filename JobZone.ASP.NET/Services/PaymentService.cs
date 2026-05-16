@@ -140,7 +140,7 @@ namespace JobZone.ASP.NET.Services
             _context.PaymentHistories.Add(new PaymentHistory
             {
                 UserId = user.Id,
-                Amount = amount,
+                Amount = amount / 100,
                 OrderId = orderId,
                 ResponseCode = responseCode,
                 Status = isSuccess ? PaymentStatusEnum.SUCCESS : PaymentStatusEnum.FAILED

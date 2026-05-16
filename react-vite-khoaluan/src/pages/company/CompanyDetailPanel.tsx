@@ -83,7 +83,7 @@ const CompanyDetailPanel = ({ companyId }: IProps) => {
                       />
                     </span>
                   )}
-                  <button
+                  {/* <button
                     className="btn-success "
                     onClick={() => setIsAIReviewOpen(true)}
                     style={{
@@ -93,7 +93,7 @@ const CompanyDetailPanel = ({ companyId }: IProps) => {
                     }}
                   >
                     Review By AI
-                  </button>
+                  </button> */}
                 </h1>
 
                 <div className="location">
